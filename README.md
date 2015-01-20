@@ -10,7 +10,9 @@ Create a virtual machine on VMware vCenter by cloning an existing VM or template
 provider "vsphere" {
     server = "vcenter-server"
     user = "account"
+// or set VSPHERE_USER environment variable
     password = "secret"
+// or set VSPHERE_PASSWORD environment variable
 }
 
 resource "vsphere_vm" "machine" {
@@ -20,18 +22,16 @@ resource "vsphere_vm" "machine" {
     folder = "Full/Path/to/Folder"
     host = "hostname"
     pool = "Resource/Pool"
+// optional
+    linked_clone = true
 }
 ```
 - Run
+
     $ terraform apply
-
-## Environment Variables
-
-Instead of storing credentials in the file, `VSPHERE_USER` and `VSPHERE_PASSWORD` environment variables can be used.
 
 ## TODO
 
-- linked_clone = true
 - power_on = false
 - template = true
 - customize disk size
@@ -43,3 +43,4 @@ Instead of storing credentials in the file, `VSPHERE_USER` and `VSPHERE_PASSWORD
 - partitial update
 - move datacenter name into provider settings
 - making new snapshots
+- full clone from snapshot or current state

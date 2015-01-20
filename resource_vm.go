@@ -5,6 +5,7 @@ import (
 	"log"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/vmware/govmomi"
+	"github.com/vmware/govmomi/vim25/mo"
 	"github.com/vmware/govmomi/vim25/types"
 )
 
@@ -39,6 +40,10 @@ func resourceVm() *schema.Resource {
 			"pool": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
+			},
+			"linked_clone": &schema.Schema{
+				Type:     schema.TypeBool,
+				Optional: true,
 			},
 		},
 	}
@@ -75,10 +80,27 @@ func resourceVmCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 	pref := p.Reference()
 
+/////////////
+	var o mo.VirtualMachine
+	err = client.Properties(vm.Reference(), []string{"snapshot"}, &o)
+	if err != nil {
+		return fmt.Errorf("Error reading snapshot")
+	}
+	if o.Snapshot == nil {
+		return fmt.Errorf("Base VM has no snapshots")
+	}
+	sref := o.Snapshot.CurrentSnapshot
+/////////////
+
 	relocateSpec := types.VirtualMachineRelocateSpec{
 		Pool: &pref,
 	}
+	linkedClone := d.Get("linked_clone").(bool)
+	if linkedClone {
+		relocateSpec.DiskMoveType = "createNewChildDiskBacking"
+	}
 	cloneSpec := types.VirtualMachineCloneSpec{
+		Snapshot: sref,
 		Location: relocateSpec,
 	}
 	name := d.Get("name").(string)
