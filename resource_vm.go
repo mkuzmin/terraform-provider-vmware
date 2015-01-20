@@ -1,7 +1,11 @@
 package main
 
 import (
+	"fmt"
+	"log"
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/vmware/govmomi"
+	"github.com/vmware/govmomi/vim25/types"
 )
 
 func resourceVm() *schema.Resource {
@@ -12,11 +16,84 @@ func resourceVm() *schema.Resource {
 		Delete: resourceVmDelete,
 
 		Schema: map[string]*schema.Schema{
+			"name": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"source": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"datacenter": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"folder": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"host": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"pool": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
 		},
 	}
 }
 
 func resourceVmCreate(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*govmomi.Client)
+
+	ref, err := client.SearchIndex().FindByInventoryPath(fmt.Sprintf("%s/vm/%s", d.Get("datacenter").(string), d.Get("source").(string)))
+	if err != nil {
+		return fmt.Errorf("Error reading vm: %s", err)
+	}
+	vm, ok := ref.(*govmomi.VirtualMachine)
+	if !ok {
+		return fmt.Errorf("Error reading vm")
+	}
+
+	ref, err = client.SearchIndex().FindByInventoryPath(fmt.Sprintf("%v/vm/%v", d.Get("datacenter").(string), d.Get("folder").(string)))
+	if err != nil {
+		return fmt.Errorf("Error reading folder: %s", err)
+	}
+	f, ok := ref.(*govmomi.Folder)
+	if !ok {
+		return fmt.Errorf("Error reading folder")
+	}
+
+	ref, err = client.SearchIndex().FindByInventoryPath(fmt.Sprintf("%v/host/%v/Resources/%v", d.Get("datacenter").(string), d.Get("host").(string), d.Get("pool").(string)))
+	if err != nil {
+		return fmt.Errorf("Error reading resource pool: %s", err)
+	}
+	p, ok := ref.(*govmomi.ResourcePool)
+	if !ok {
+		return fmt.Errorf("Error reading resource pool")
+	}
+	pref := p.Reference()
+
+	relocateSpec := types.VirtualMachineRelocateSpec{
+		Pool: &pref,
+	}
+	cloneSpec := types.VirtualMachineCloneSpec{
+		Location: relocateSpec,
+	}
+	name := d.Get("name").(string)
+
+	task, err := vm.Clone(f, name, cloneSpec)
+	if err != nil {
+		return fmt.Errorf("Error clonning vm: %s", err)
+	}
+	_, err = task.WaitForResult(nil)
+	if err != nil {
+		return fmt.Errorf("Error clonning vm: %s", err)
+	}
+
+	d.SetId(name)
+	log.Printf("[INFO] Create VM: %s", d.Id())
 	return nil
 }
 
