@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/vmware/govmomi"
 	"github.com/vmware/govmomi/vim25/mo"
@@ -13,7 +12,6 @@ func resourceVm() *schema.Resource {
 	return &schema.Resource{
 		Create: resourceVmCreate,
 		Read:   resourceVmRead,
-		Update: resourceVmUpdate,
 		Delete: resourceVmDelete,
 
 		Schema: map[string]*schema.Schema{
@@ -123,10 +121,6 @@ func resourceVmCreate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceVmRead(d *schema.ResourceData, meta interface{}) error {
-	return nil
-}
-
-func resourceVmUpdate(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
