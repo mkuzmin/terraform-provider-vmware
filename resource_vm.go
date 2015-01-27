@@ -114,8 +114,11 @@ func resourceVmCreate(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("Error clonning vm: %s", err)
 	}
 
-	d.SetId(name)
-	log.Printf("[INFO] Create VM: %s", d.Id())
+	err = client.Properties(vm.Reference(), []string{"config.uuid"}, &o)
+	if err != nil {
+		return fmt.Errorf("Error reading UUID")
+	}
+	d.SetId(o.Config.Uuid)
 	return nil
 }
 
