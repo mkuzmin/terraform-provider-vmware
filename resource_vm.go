@@ -121,5 +121,18 @@ func resourceVmRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceVmDelete(d *schema.ResourceData, meta interface{}) error {
-	return nil
+    client := meta.(*govmomi.Client)
+    ref := types.ManagedObjectReference{Type: "VirtualMachine", Value: d.Id() }
+    vm := govmomi.NewVirtualMachine(client, ref)
+
+    task, err := vm.Destroy()
+    if err != nil {
+        return fmt.Errorf("Error deleting vm: %s", err)
+    }
+    _, err = task.WaitForResult(nil)
+    if err != nil {
+        return fmt.Errorf("Error deleting vm: %s", err)
+    }
+
+    return nil
 }
