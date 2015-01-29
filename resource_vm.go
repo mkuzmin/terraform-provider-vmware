@@ -107,16 +107,12 @@ func resourceVmCreate(d *schema.ResourceData, meta interface{}) error {
 	if err != nil {
 		return fmt.Errorf("Error clonning vm: %s", err)
 	}
-	_, err = task.WaitForResult(nil)
+	info, err := task.WaitForResult(nil)
 	if err != nil {
 		return fmt.Errorf("Error clonning vm: %s", err)
 	}
 
-	err = client.Properties(vm.Reference(), []string{"config.uuid"}, &o)
-	if err != nil {
-		return fmt.Errorf("Error reading UUID")
-	}
-	d.SetId(o.Config.Uuid)
+	d.SetId(info.Result.(types.ManagedObjectReference).Value)
 	return nil
 }
 
