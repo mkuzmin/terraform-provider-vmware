@@ -121,6 +121,18 @@ func resourceVmCreate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceVmRead(d *schema.ResourceData, meta interface{}) error {
+    client := meta.(*govmomi.Client)
+    ref := types.ManagedObjectReference{Type: "VirtualMachine", Value: d.Id() }
+    vm := govmomi.NewVirtualMachine(client, ref)
+
+    var o mo.VirtualMachine
+    err := client.Properties(vm.Reference(), []string{"config.name"}, &o)
+    if err != nil {
+        d.SetId("")
+        return nil
+    }
+    d.Set("name", o.Config.Name)
+
 	return nil
 }
 

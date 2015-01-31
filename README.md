@@ -33,15 +33,14 @@ resource "vsphere_vm" "machine" {
 
 ## TODO
 
-- power_on = false
 - template = true
 - customize disk size
 - customize RAM size
 - Apply customization spec (change hostname)
 - get rid of full source path
-- persist UUID instead of vm name
-- read/update/delete actions
-- partitial update
+- read action
+- update action
+- is partitial update required somewhere?
 - move datacenter name into provider settings
-- making new snapshots
-- full clone from snapshot or current state
+- make new snapshot and convert to a template (for future linked clones)
+- full clone from current state (option)
