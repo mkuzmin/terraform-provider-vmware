@@ -141,7 +141,13 @@ func resourceVmDelete(d *schema.ResourceData, meta interface{}) error {
     ref := types.ManagedObjectReference{Type: "VirtualMachine", Value: d.Id() }
     vm := govmomi.NewVirtualMachine(client, ref)
 
-    task, err := vm.Destroy()
+    task, err := vm.PowerOff()
+    if err != nil {
+        return fmt.Errorf("Error powering vm off: %s", err)
+    }
+    task.WaitForResult(nil)
+
+    task, err = vm.Destroy()
     if err != nil {
         return fmt.Errorf("Error deleting vm: %s", err)
     }
