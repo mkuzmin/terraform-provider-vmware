@@ -10,9 +10,9 @@ Create a virtual machine on VMware vCenter by cloning an existing VM or template
 provider "vsphere" {
     server = "vcenter-server"
     user = "account"
-// or set VSPHERE_USER environment variable
+# or set VSPHERE_USER environment variable
     password = "secret"
-// or set VSPHERE_PASSWORD environment variable
+# or set VSPHERE_PASSWORD environment variable
 }
 
 resource "vsphere_vm" "machine" {
@@ -22,8 +22,9 @@ resource "vsphere_vm" "machine" {
     folder = "Full/Path/to/Folder"
     host = "hostname"
     pool = "Resource/Pool"
-// optional
+# optional
     linked_clone = true
+    # power_on = false
 }
 ```
 - Run

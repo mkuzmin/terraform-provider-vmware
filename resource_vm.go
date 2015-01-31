@@ -43,6 +43,11 @@ func resourceVm() *schema.Resource {
 				Type:     schema.TypeBool,
 				Optional: true,
 			},
+			"power_on": &schema.Schema{
+				Type:     schema.TypeBool,
+				Optional: true,
+                Default:  true,
+			},
 		},
 	}
 }
@@ -78,7 +83,6 @@ func resourceVmCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 	pref := p.Reference()
 
-/////////////
 	var o mo.VirtualMachine
 	err = client.Properties(vm.Reference(), []string{"snapshot"}, &o)
 	if err != nil {
@@ -88,7 +92,6 @@ func resourceVmCreate(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("Base VM has no snapshots")
 	}
 	sref := o.Snapshot.CurrentSnapshot
-/////////////
 
 	relocateSpec := types.VirtualMachineRelocateSpec{
 		Pool: &pref,
@@ -100,6 +103,7 @@ func resourceVmCreate(d *schema.ResourceData, meta interface{}) error {
 	cloneSpec := types.VirtualMachineCloneSpec{
 		Snapshot: sref,
 		Location: relocateSpec,
+        PowerOn: d.Get("power_on").(bool),
 	}
 	name := d.Get("name").(string)
 
