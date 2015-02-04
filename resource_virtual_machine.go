@@ -106,11 +106,13 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
     }
 
 	cloneSpec := types.VirtualMachineCloneSpec{
-		Snapshot: snapshot,
 		Location: relocateSpec,
         Config:   &confSpec,
         PowerOn:  d.Get("power_on").(bool),
 	}
+    if d.Get("linked_clone").(bool) {
+        cloneSpec.Snapshot = snapshot
+    }
 
 	task, err := vm.Clone(folder, d.Get("name").(string), cloneSpec)
 	if err != nil {

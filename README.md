@@ -24,6 +24,8 @@ resource "vsphere_virtual_machine" "machine" {
     host = "hostname"
     pool = "Resource/Pool"
 # optional
+    # if true, create a linked clone from a latest snapshot
+    # if false (default), create a full clone from a current state
     linked_clone = true
     # cpus = 2
     # memory = 8192
