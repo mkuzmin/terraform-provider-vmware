@@ -30,6 +30,7 @@ resource "vsphere_virtual_machine" "machine" {
 - Run
 ```
 $ terraform apply
+
 $ terraform destroy
 ```
 ## TODO

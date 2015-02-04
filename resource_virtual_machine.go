@@ -55,33 +55,23 @@ func resourceVirtualMachine() *schema.Resource {
 func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*govmomi.Client)
 
-	ref, err := client.SearchIndex().FindByInventoryPath(fmt.Sprintf("%s/vm/%s", d.Get("datacenter").(string), d.Get("source").(string)))
+	vm_ref, err := client.SearchIndex().FindByInventoryPath(fmt.Sprintf("%s/vm/%s", d.Get("datacenter").(string), d.Get("source").(string)))
 	if err != nil {
 		return fmt.Errorf("Error reading vm: %s", err)
 	}
-	vm, ok := ref.(*govmomi.VirtualMachine)
-	if !ok {
-		return fmt.Errorf("Error reading vm")
-	}
+	vm := vm_ref.(*govmomi.VirtualMachine)
 
-	ref, err = client.SearchIndex().FindByInventoryPath(fmt.Sprintf("%v/vm/%v", d.Get("datacenter").(string), d.Get("folder").(string)))
+	folder_ref, err := client.SearchIndex().FindByInventoryPath(fmt.Sprintf("%v/vm/%v", d.Get("datacenter").(string), d.Get("folder").(string)))
 	if err != nil {
 		return fmt.Errorf("Error reading folder: %s", err)
 	}
-	f, ok := ref.(*govmomi.Folder)
-	if !ok {
-		return fmt.Errorf("Error reading folder")
-	}
+	folder := folder_ref.(*govmomi.Folder)
 
-	ref, err = client.SearchIndex().FindByInventoryPath(fmt.Sprintf("%v/host/%v/Resources/%v", d.Get("datacenter").(string), d.Get("host").(string), d.Get("pool").(string)))
+	pool_ref, err := client.SearchIndex().FindByInventoryPath(fmt.Sprintf("%v/host/%v/Resources/%v", d.Get("datacenter").(string), d.Get("host").(string), d.Get("pool").(string)))
 	if err != nil {
 		return fmt.Errorf("Error reading resource pool: %s", err)
 	}
-	p, ok := ref.(*govmomi.ResourcePool)
-	if !ok {
-		return fmt.Errorf("Error reading resource pool")
-	}
-	pref := p.Reference()
+	pool_mor := pool_ref.Reference()
 
 	var o mo.VirtualMachine
 	err = client.Properties(vm.Reference(), []string{"snapshot"}, &o)
@@ -91,23 +81,21 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
 	if o.Snapshot == nil {
 		return fmt.Errorf("Base VM has no snapshots")
 	}
-	sref := o.Snapshot.CurrentSnapshot
+	snapshot := o.Snapshot.CurrentSnapshot
 
 	relocateSpec := types.VirtualMachineRelocateSpec{
-		Pool: &pref,
+		Pool: &pool_mor,
 	}
-	linkedClone := d.Get("linked_clone").(bool)
-	if linkedClone {
+	if d.Get("linked_clone").(bool) {
 		relocateSpec.DiskMoveType = "createNewChildDiskBacking"
 	}
 	cloneSpec := types.VirtualMachineCloneSpec{
-		Snapshot: sref,
+		Snapshot: snapshot,
 		Location: relocateSpec,
         PowerOn: d.Get("power_on").(bool),
 	}
-	name := d.Get("name").(string)
 
-	task, err := vm.Clone(f, name, cloneSpec)
+	task, err := vm.Clone(folder, d.Get("name").(string), cloneSpec)
 	if err != nil {
 		return fmt.Errorf("Error clonning vm: %s", err)
 	}
@@ -122,8 +110,8 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
 
 func resourceVirtualMachineRead(d *schema.ResourceData, meta interface{}) error {
     client := meta.(*govmomi.Client)
-    ref := types.ManagedObjectReference{Type: "VirtualMachine", Value: d.Id() }
-    vm := govmomi.NewVirtualMachine(client, ref)
+    vm_mor := types.ManagedObjectReference{Type: "VirtualMachine", Value: d.Id() }
+    vm := govmomi.NewVirtualMachine(client, vm_mor)
 
     var o mo.VirtualMachine
     err := client.Properties(vm.Reference(), []string{"config.name"}, &o)
@@ -138,8 +126,8 @@ func resourceVirtualMachineRead(d *schema.ResourceData, meta interface{}) error 
 
 func resourceVirtualMachineDelete(d *schema.ResourceData, meta interface{}) error {
     client := meta.(*govmomi.Client)
-    ref := types.ManagedObjectReference{Type: "VirtualMachine", Value: d.Id() }
-    vm := govmomi.NewVirtualMachine(client, ref)
+    vm_mor := types.ManagedObjectReference{Type: "VirtualMachine", Value: d.Id() }
+    vm := govmomi.NewVirtualMachine(client, vm_mor)
 
     task, err := vm.PowerOff()
     if err != nil {
