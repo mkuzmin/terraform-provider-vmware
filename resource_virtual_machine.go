@@ -131,12 +131,14 @@ func resourceVirtualMachineRead(d *schema.ResourceData, meta interface{}) error 
     vm := govmomi.NewVirtualMachine(client, vm_mor)
 
     var o mo.VirtualMachine
-    err := client.Properties(vm.Reference(), []string{"config.name"}, &o)
+    err := client.Properties(vm.Reference(), []string{"summary.config"}, &o)
     if err != nil {
         d.SetId("")
         return nil
     }
-    d.Set("name", o.Config.Name)
+    d.Set("name", o.Summary.Config.Name)
+    d.Set("cpus", o.Summary.Config.NumCpu)
+    d.Set("memory", o.Summary.Config.MemorySizeMB)
 
 	return nil
 }
