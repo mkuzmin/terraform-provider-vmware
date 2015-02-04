@@ -15,7 +15,7 @@ provider "vsphere" {
 # or set VSPHERE_PASSWORD environment variable
 }
 
-resource "vsphere_vm" "machine" {
+resource "vsphere_virtual_machine" "machine" {
     name =  "machine1"
     source = "Full/Path/to/VM"
     datacenter = "DC"
@@ -28,19 +28,18 @@ resource "vsphere_vm" "machine" {
 }
 ```
 - Run
-
-    $ terraform apply
-
+```
+$ terraform apply
+$ terraform destroy
+```
 ## TODO
 
-- template = true
 - customize disk size
 - customize RAM size
 - Apply customization spec (change hostname)
 - get rid of full source path
-- read action
+- refresh for folder, host and pool
 - update action
-- is partitial update required somewhere?
-- move datacenter name into provider settings
+- template = true
 - make new snapshot and convert to a template (for future linked clones)
 - full clone from current state (option)

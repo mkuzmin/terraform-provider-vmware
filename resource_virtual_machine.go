@@ -8,11 +8,11 @@ import (
 	"github.com/vmware/govmomi/vim25/types"
 )
 
-func resourceVm() *schema.Resource {
+func resourceVirtualMachine() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceVmCreate,
-		Read:   resourceVmRead,
-		Delete: resourceVmDelete,
+		Create: resourceVirtualMachineCreate,
+		Read:   resourceVirtualMachineRead,
+		Delete: resourceVirtualMachineDelete,
 
 		Schema: map[string]*schema.Schema{
 			"name": &schema.Schema{
@@ -52,7 +52,7 @@ func resourceVm() *schema.Resource {
 	}
 }
 
-func resourceVmCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*govmomi.Client)
 
 	ref, err := client.SearchIndex().FindByInventoryPath(fmt.Sprintf("%s/vm/%s", d.Get("datacenter").(string), d.Get("source").(string)))
@@ -120,7 +120,7 @@ func resourceVmCreate(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func resourceVmRead(d *schema.ResourceData, meta interface{}) error {
+func resourceVirtualMachineRead(d *schema.ResourceData, meta interface{}) error {
     client := meta.(*govmomi.Client)
     ref := types.ManagedObjectReference{Type: "VirtualMachine", Value: d.Id() }
     vm := govmomi.NewVirtualMachine(client, ref)
@@ -136,7 +136,7 @@ func resourceVmRead(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func resourceVmDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceVirtualMachineDelete(d *schema.ResourceData, meta interface{}) error {
     client := meta.(*govmomi.Client)
     ref := types.ManagedObjectReference{Type: "VirtualMachine", Value: d.Id() }
     vm := govmomi.NewVirtualMachine(client, ref)

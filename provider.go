@@ -28,7 +28,7 @@ func Provider() terraform.ResourceProvider {
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
-			"vsphere_vm": resourceVm(),
+			"vsphere_virtual_machine": resourceVirtualMachine(),
 		},
 
 		ConfigureFunc: providerConfigure,
