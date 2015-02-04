@@ -47,6 +47,10 @@ func resourceVirtualMachine() *schema.Resource {
 				Type:     schema.TypeInt,
 				Optional: true,
 			},
+			"memory": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
+			},
 			"power_on": &schema.Schema{
 				Type:     schema.TypeBool,
 				Optional: true,
@@ -96,6 +100,9 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
     var confSpec types.VirtualMachineConfigSpec
     if d.Get("cpus") != nil {
         confSpec.NumCPUs = d.Get("cpus").(int)
+    }
+    if d.Get("memory") != nil {
+        confSpec.MemoryMB = int64(d.Get("memory").(int))
     }
 
 	cloneSpec := types.VirtualMachineCloneSpec{

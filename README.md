@@ -26,6 +26,7 @@ resource "vsphere_virtual_machine" "machine" {
 # optional
     linked_clone = true
     # cpus = 2
+    # memory = 8192
     # power_on = false
 }
 ```
