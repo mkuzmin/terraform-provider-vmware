@@ -25,6 +25,7 @@ resource "vsphere_virtual_machine" "machine" {
     pool = "Resource/Pool"
 # optional
     linked_clone = true
+    # cpus = 2
     # power_on = false
 }
 ```

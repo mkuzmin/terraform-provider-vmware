@@ -43,6 +43,10 @@ func resourceVirtualMachine() *schema.Resource {
 				Type:     schema.TypeBool,
 				Optional: true,
 			},
+			"cpus": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
+			},
 			"power_on": &schema.Schema{
 				Type:     schema.TypeBool,
 				Optional: true,
@@ -89,10 +93,16 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
 	if d.Get("linked_clone").(bool) {
 		relocateSpec.DiskMoveType = "createNewChildDiskBacking"
 	}
+    var confSpec types.VirtualMachineConfigSpec
+    if d.Get("cpus") != nil {
+        confSpec.NumCPUs = d.Get("cpus").(int)
+    }
+
 	cloneSpec := types.VirtualMachineCloneSpec{
 		Snapshot: snapshot,
 		Location: relocateSpec,
-        PowerOn: d.Get("power_on").(bool),
+        Config:   &confSpec,
+        PowerOn:  d.Get("power_on").(bool),
 	}
 
 	task, err := vm.Clone(folder, d.Get("name").(string), cloneSpec)
