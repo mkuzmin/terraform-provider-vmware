@@ -23,13 +23,18 @@ resource "vsphere_virtual_machine" "machine" {
     folder = "Full/Path/to/Folder"
     host = "hostname"
     pool = "Resource/Pool"
-# optional
+
+    ### optional parameters
+
     # if true, create a linked clone from a latest snapshot
     # if false (default), create a full clone from a current state
-    linked_clone = true
-    # cpus = 2
-    # memory = 8192
-    # power_on = false
+    linked_clone = false
+
+    # by default values are copied from source VM
+    cpus = 2
+    memory = 8192
+
+    power_on = true
 }
 ```
 - Run

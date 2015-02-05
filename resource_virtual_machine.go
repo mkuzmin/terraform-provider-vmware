@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/vmware/govmomi"
 	"github.com/vmware/govmomi/vim25/mo"
@@ -56,6 +57,10 @@ func resourceVirtualMachine() *schema.Resource {
 				Optional: true,
                 Default:  true,
 			},
+			"ip_address": &schema.Schema{
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 		},
 	}
 }
@@ -63,11 +68,11 @@ func resourceVirtualMachine() *schema.Resource {
 func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*govmomi.Client)
 
-	vm_ref, err := client.SearchIndex().FindByInventoryPath(fmt.Sprintf("%s/vm/%s", d.Get("datacenter").(string), d.Get("source").(string)))
+	source_vm_ref, err := client.SearchIndex().FindByInventoryPath(fmt.Sprintf("%s/vm/%s", d.Get("datacenter").(string), d.Get("source").(string)))
 	if err != nil {
 		return fmt.Errorf("Error reading vm: %s", err)
 	}
-	vm := vm_ref.(*govmomi.VirtualMachine)
+	source_vm := source_vm_ref.(*govmomi.VirtualMachine)
 
 	folder_ref, err := client.SearchIndex().FindByInventoryPath(fmt.Sprintf("%v/vm/%v", d.Get("datacenter").(string), d.Get("folder").(string)))
 	if err != nil {
@@ -82,7 +87,7 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
 	pool_mor := pool_ref.Reference()
 
 	var o mo.VirtualMachine
-	err = client.Properties(vm.Reference(), []string{"snapshot"}, &o)
+	err = client.Properties(source_vm.Reference(), []string{"snapshot"}, &o)
 	if err != nil {
 		return fmt.Errorf("Error reading snapshot")
 	}
@@ -114,7 +119,7 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
         cloneSpec.Snapshot = snapshot
     }
 
-	task, err := vm.Clone(folder, d.Get("name").(string), cloneSpec)
+	task, err := source_vm.Clone(folder, d.Get("name").(string), cloneSpec)
 	if err != nil {
 		return fmt.Errorf("Error clonning vm: %s", err)
 	}
@@ -123,8 +128,20 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
 		return fmt.Errorf("Error clonning vm: %s", err)
 	}
 
-	d.SetId(info.Result.(types.ManagedObjectReference).Value)
-	return nil
+	vm_mor := info.Result.(types.ManagedObjectReference)
+    d.SetId(vm_mor.Value)
+    vm := govmomi.NewVirtualMachine(client, vm_mor)
+    // workaround for https://github.com/vmware/govmomi/issues/218
+    if d.Get("power_on").(bool) {
+        ip, err := vm.WaitForIP()
+        if err != nil {
+            log.Printf("[ERROR] Cannot read ip address: %s", err)
+        } else {
+            d.Set("ip_address", ip)
+        }
+    }
+
+    return nil
 }
 
 func resourceVirtualMachineRead(d *schema.ResourceData, meta interface{}) error {
@@ -133,7 +150,7 @@ func resourceVirtualMachineRead(d *schema.ResourceData, meta interface{}) error 
     vm := govmomi.NewVirtualMachine(client, vm_mor)
 
     var o mo.VirtualMachine
-    err := client.Properties(vm.Reference(), []string{"summary.config"}, &o)
+    err := client.Properties(vm.Reference(), []string{"summary"}, &o)
     if err != nil {
         d.SetId("")
         return nil
@@ -141,6 +158,21 @@ func resourceVirtualMachineRead(d *schema.ResourceData, meta interface{}) error 
     d.Set("name", o.Summary.Config.Name)
     d.Set("cpus", o.Summary.Config.NumCpu)
     d.Set("memory", o.Summary.Config.MemorySizeMB)
+
+    if o.Summary.Runtime.PowerState == "poweredOn" {
+        d.Set("power_on", true)
+    } else {
+        d.Set("power_on", false)
+    }
+
+    if d.Get("power_on").(bool) {
+        ip, err := vm.WaitForIP()
+        if err != nil {
+            log.Printf("[ERROR] Cannot read ip address: %s", err)
+        } else {
+            d.Set("ip_address", ip)
+        }
+    }
 
 	return nil
 }
