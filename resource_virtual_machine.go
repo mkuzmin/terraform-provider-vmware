@@ -47,10 +47,12 @@ func resourceVirtualMachine() *schema.Resource {
 			"cpus": &schema.Schema{
 				Type:     schema.TypeInt,
 				Optional: true,
+                Computed: true,
 			},
 			"memory": &schema.Schema{
 				Type:     schema.TypeInt,
 				Optional: true,
+                Computed: true,
 			},
 			"power_on": &schema.Schema{
 				Type:     schema.TypeBool,
