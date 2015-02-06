@@ -77,7 +77,10 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
 	if err != nil {
 		return fmt.Errorf("Error reading vm: %s", err)
 	}
-	source_vm := source_vm_ref.(*govmomi.VirtualMachine)
+    if source_vm_ref == nil {
+        return fmt.Errorf("Cannot find source vm %s", d.Get("source").(string))
+    }
+    source_vm := source_vm_ref.(*govmomi.VirtualMachine)
 
 	var folder_ref govmomi.Reference
     var source_vm_mo mo.VirtualMachine
@@ -87,6 +90,10 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
         if err != nil {
             return fmt.Errorf("Error reading folder: %s", err)
         }
+        if folder_ref == nil {
+            return fmt.Errorf("Cannot find folder %s", d.Get("folder").(string))
+        }
+
         folder = folder_ref.(*govmomi.Folder)
     } else {
         err = client.Properties(source_vm.Reference(), []string{"parent"}, &source_vm_mo)
@@ -104,6 +111,9 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
         pool_ref, err := client.SearchIndex().FindByInventoryPath(fmt.Sprintf("%v/host/%v/Resources/%v", d.Get("datacenter").(string), d.Get("host").(string), d.Get("pool").(string)))
         if err != nil {
             return fmt.Errorf("Error reading resource pool: %s", err)
+        }
+        if pool_ref == nil {
+            return fmt.Errorf("Cannot find resource pool %s", d.Get("pool").(string))
         }
         pool_mor = pool_ref.Reference()
         relocateSpec.Pool = &pool_mor
