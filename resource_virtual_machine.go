@@ -30,7 +30,8 @@ func resourceVirtualMachine() *schema.Resource {
 			},
 			"folder": &schema.Schema{
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
+				Computed: true,
 			},
 			"host": &schema.Schema{
 				Type:     schema.TypeString,
@@ -78,11 +79,18 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
 	}
 	source_vm := source_vm_ref.(*govmomi.VirtualMachine)
 
-	folder_ref, err := client.SearchIndex().FindByInventoryPath(fmt.Sprintf("%v/vm/%v", d.Get("datacenter").(string), d.Get("folder").(string)))
-	if err != nil {
-		return fmt.Errorf("Error reading folder: %s", err)
-	}
-	folder := folder_ref.(*govmomi.Folder)
+	var folder_ref govmomi.Reference
+    var folder *govmomi.Folder
+    if d.Get("folder").(string) != "" {
+        folder_ref, err = client.SearchIndex().FindByInventoryPath(fmt.Sprintf("%v/vm/%v", d.Get("datacenter").(string), d.Get("folder").(string)))
+        if err != nil {
+            return fmt.Errorf("Error reading folder: %s", err)
+        }
+        folder = folder_ref.(*govmomi.Folder)
+    } else {
+        folder = client.RootFolder()
+    }
+
 
 	var relocateSpec types.VirtualMachineRelocateSpec
 
