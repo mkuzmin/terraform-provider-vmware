@@ -34,12 +34,14 @@ func resourceVirtualMachine() *schema.Resource {
 			},
 			"host": &schema.Schema{
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
+                Computed: true,
 			},
 			"pool": &schema.Schema{
 				Type:     schema.TypeString,
-				Required: true,
-			},
+				Optional: true,
+                Computed: true,
+            },
 			"linked_clone": &schema.Schema{
 				Type:     schema.TypeBool,
 				Optional: true,
@@ -82,12 +84,6 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
 	}
 	folder := folder_ref.(*govmomi.Folder)
 
-	pool_ref, err := client.SearchIndex().FindByInventoryPath(fmt.Sprintf("%v/host/%v/Resources/%v", d.Get("datacenter").(string), d.Get("host").(string), d.Get("pool").(string)))
-	if err != nil {
-		return fmt.Errorf("Error reading resource pool: %s", err)
-	}
-	pool_mor := pool_ref.Reference()
-
 	var o mo.VirtualMachine
 	err = client.Properties(source_vm.Reference(), []string{"snapshot"}, &o)
 	if err != nil {
@@ -98,9 +94,18 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
 	}
 	snapshot := o.Snapshot.CurrentSnapshot
 
-	relocateSpec := types.VirtualMachineRelocateSpec{
-		Pool: &pool_mor,
-	}
+	var relocateSpec types.VirtualMachineRelocateSpec
+
+    var pool_mor types.ManagedObjectReference
+    if d.Get("host").(string) != "" && d.Get("pool").(string) != ""	{
+        pool_ref, err := client.SearchIndex().FindByInventoryPath(fmt.Sprintf("%v/host/%v/Resources/%v", d.Get("datacenter").(string), d.Get("host").(string), d.Get("pool").(string)))
+        if err != nil {
+            return fmt.Errorf("Error reading resource pool: %s", err)
+        }
+        pool_mor = pool_ref.Reference()
+        relocateSpec.Pool = &pool_mor
+    }
+
 	if d.Get("linked_clone").(bool) {
 		relocateSpec.DiskMoveType = "createNewChildDiskBacking"
 	}
