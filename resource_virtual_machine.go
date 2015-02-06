@@ -84,16 +84,6 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
 	}
 	folder := folder_ref.(*govmomi.Folder)
 
-	var o mo.VirtualMachine
-	err = client.Properties(source_vm.Reference(), []string{"snapshot"}, &o)
-	if err != nil {
-		return fmt.Errorf("Error reading snapshot")
-	}
-	if o.Snapshot == nil {
-		return fmt.Errorf("Base VM has no snapshots")
-	}
-	snapshot := o.Snapshot.CurrentSnapshot
-
 	var relocateSpec types.VirtualMachineRelocateSpec
 
     var pool_mor types.ManagedObjectReference
@@ -123,7 +113,15 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
         PowerOn:  d.Get("power_on").(bool),
 	}
     if d.Get("linked_clone").(bool) {
-        cloneSpec.Snapshot = snapshot
+        var o mo.VirtualMachine
+        err = client.Properties(source_vm.Reference(), []string{"snapshot"}, &o)
+        if err != nil {
+            return fmt.Errorf("Error reading snapshot")
+        }
+        if o.Snapshot == nil {
+            return fmt.Errorf("Base VM has no snapshots")
+        }
+        cloneSpec.Snapshot = o.Snapshot.CurrentSnapshot
     }
 
 	task, err := source_vm.Clone(folder, d.Get("name").(string), cloneSpec)
