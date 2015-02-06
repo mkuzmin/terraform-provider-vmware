@@ -80,6 +80,7 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
 	source_vm := source_vm_ref.(*govmomi.VirtualMachine)
 
 	var folder_ref govmomi.Reference
+    var source_vm_mo mo.VirtualMachine
     var folder *govmomi.Folder
     if d.Get("folder").(string) != "" {
         folder_ref, err = client.SearchIndex().FindByInventoryPath(fmt.Sprintf("%v/vm/%v", d.Get("datacenter").(string), d.Get("folder").(string)))
@@ -88,7 +89,11 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
         }
         folder = folder_ref.(*govmomi.Folder)
     } else {
-        folder = client.RootFolder()
+        err = client.Properties(source_vm.Reference(), []string{"parent"}, &source_vm_mo)
+        if err != nil {
+            return fmt.Errorf("Error reading parent VM folder")
+        }
+        folder = govmomi.NewFolder(client, *source_vm_mo.Parent)
     }
 
 
@@ -121,15 +126,14 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
         PowerOn:  d.Get("power_on").(bool),
 	}
     if d.Get("linked_clone").(bool) {
-        var o mo.VirtualMachine
-        err = client.Properties(source_vm.Reference(), []string{"snapshot"}, &o)
+        err = client.Properties(source_vm.Reference(), []string{"snapshot"}, &source_vm_mo)
         if err != nil {
             return fmt.Errorf("Error reading snapshot")
         }
-        if o.Snapshot == nil {
+        if source_vm_mo.Snapshot == nil {
             return fmt.Errorf("Base VM has no snapshots")
         }
-        cloneSpec.Snapshot = o.Snapshot.CurrentSnapshot
+        cloneSpec.Snapshot = source_vm_mo.Snapshot.CurrentSnapshot
     }
 
 	task, err := source_vm.Clone(folder, d.Get("name").(string), cloneSpec)
@@ -162,17 +166,17 @@ func resourceVirtualMachineRead(d *schema.ResourceData, meta interface{}) error 
     vm_mor := types.ManagedObjectReference{Type: "VirtualMachine", Value: d.Id() }
     vm := govmomi.NewVirtualMachine(client, vm_mor)
 
-    var o mo.VirtualMachine
-    err := client.Properties(vm.Reference(), []string{"summary"}, &o)
+    var vm_mo mo.VirtualMachine
+    err := client.Properties(vm.Reference(), []string{"summary"}, &vm_mo)
     if err != nil {
         d.SetId("")
         return nil
     }
-    d.Set("name", o.Summary.Config.Name)
-    d.Set("cpus", o.Summary.Config.NumCpu)
-    d.Set("memory", o.Summary.Config.MemorySizeMB)
+    d.Set("name", vm_mo.Summary.Config.Name)
+    d.Set("cpus", vm_mo.Summary.Config.NumCpu)
+    d.Set("memory", vm_mo.Summary.Config.MemorySizeMB)
 
-    if o.Summary.Runtime.PowerState == "poweredOn" {
+    if vm_mo.Summary.Runtime.PowerState == "poweredOn" {
         d.Set("power_on", true)
     } else {
         d.Set("power_on", false)
