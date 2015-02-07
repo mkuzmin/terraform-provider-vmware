@@ -38,7 +38,7 @@ func resourceVirtualMachine() *schema.Resource {
 				Optional: true,
                 Computed: true,
 			},
-			"pool": &schema.Schema{
+			"resource_pool": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
                 Computed: true,
@@ -106,14 +106,16 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
 
 	var relocateSpec types.VirtualMachineRelocateSpec
 
+    host_name := d.Get("host").(string)
+    pool_name := d.Get("resource_pool").(string)
     var pool_mor types.ManagedObjectReference
-    if d.Get("host").(string) != "" && d.Get("pool").(string) != ""	{
-        pool_ref, err := client.SearchIndex().FindByInventoryPath(fmt.Sprintf("%v/host/%v/Resources/%v", d.Get("datacenter").(string), d.Get("host").(string), d.Get("pool").(string)))
+    if host_name != "" && pool_name != ""	{
+        pool_ref, err := client.SearchIndex().FindByInventoryPath(fmt.Sprintf("%v/host/%v/Resources/%v", d.Get("datacenter").(string), host_name, pool_name))
         if err != nil {
             return fmt.Errorf("Error reading resource pool: %s", err)
         }
         if pool_ref == nil {
-            return fmt.Errorf("Cannot find resource pool %s", d.Get("pool").(string))
+            return fmt.Errorf("Cannot find resource pool %s", pool_name)
         }
         pool_mor = pool_ref.Reference()
         relocateSpec.Pool = &pool_mor

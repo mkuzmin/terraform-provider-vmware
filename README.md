@@ -21,10 +21,11 @@ resource "vsphere_virtual_machine" "machine" {
     source = "Full/Path/to/VM"
     datacenter = "DC"
     folder = "Full/Path/to/Folder"
-    host = "hostname"
-    pool = "Resource/Pool"
 
     ### optional parameters
+
+    host = "hostname"
+    resource_pool = "Resource/Pool"
 
     # if true, create a linked clone from a latest snapshot
     # if false (default), create a full clone from a current state
