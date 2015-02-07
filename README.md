@@ -18,12 +18,15 @@ provider "vsphere" {
 
 resource "vsphere_virtual_machine" "machine" {
     name =  "machine1"
-    source = "Full/Path/to/VM"
+
+    # name of virtual machine or template to clone from
+    image = "Full/Path/to/VM"
+
     datacenter = "DC"
-    folder = "Full/Path/to/Folder"
 
     ### optional parameters
 
+    folder = "Full/Path/to/Folder"
     host = "hostname"
     resource_pool = "Resource/Pool"
 

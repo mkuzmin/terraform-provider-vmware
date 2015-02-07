@@ -20,7 +20,7 @@ func resourceVirtualMachine() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"source": &schema.Schema{
+			"image": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 			},
@@ -73,17 +73,18 @@ func resourceVirtualMachine() *schema.Resource {
 func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*govmomi.Client)
 
-	source_vm_ref, err := client.SearchIndex().FindByInventoryPath(fmt.Sprintf("%s/vm/%s", d.Get("datacenter").(string), d.Get("source").(string)))
+	image_name := d.Get("image").(string)
+    image_ref, err := client.SearchIndex().FindByInventoryPath(fmt.Sprintf("%s/vm/%s", d.Get("datacenter").(string), image_name))
 	if err != nil {
 		return fmt.Errorf("Error reading vm: %s", err)
 	}
-    if source_vm_ref == nil {
-        return fmt.Errorf("Cannot find source vm %s", d.Get("source").(string))
+    if image_ref == nil {
+        return fmt.Errorf("Cannot find image %s", image_name)
     }
-    source_vm := source_vm_ref.(*govmomi.VirtualMachine)
+    image := image_ref.(*govmomi.VirtualMachine)
 
 	var folder_ref govmomi.Reference
-    var source_vm_mo mo.VirtualMachine
+    var image_mo mo.VirtualMachine
     var folder *govmomi.Folder
     if d.Get("folder").(string) != "" {
         folder_ref, err = client.SearchIndex().FindByInventoryPath(fmt.Sprintf("%v/vm/%v", d.Get("datacenter").(string), d.Get("folder").(string)))
@@ -96,11 +97,11 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
 
         folder = folder_ref.(*govmomi.Folder)
     } else {
-        err = client.Properties(source_vm.Reference(), []string{"parent"}, &source_vm_mo)
+        err = client.Properties(image.Reference(), []string{"parent"}, &image_mo)
         if err != nil {
             return fmt.Errorf("Error reading parent VM folder")
         }
-        folder = govmomi.NewFolder(client, *source_vm_mo.Parent)
+        folder = govmomi.NewFolder(client, *image_mo.Parent)
     }
 
 
@@ -138,17 +139,17 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
         PowerOn:  d.Get("power_on").(bool),
 	}
     if d.Get("linked_clone").(bool) {
-        err = client.Properties(source_vm.Reference(), []string{"snapshot"}, &source_vm_mo)
+        err = client.Properties(image.Reference(), []string{"snapshot"}, &image_mo)
         if err != nil {
             return fmt.Errorf("Error reading snapshot")
         }
-        if source_vm_mo.Snapshot == nil {
-            return fmt.Errorf("Base VM has no snapshots")
+        if image_mo.Snapshot == nil {
+            return fmt.Errorf("Image VM has no snapshots")
         }
-        cloneSpec.Snapshot = source_vm_mo.Snapshot.CurrentSnapshot
+        cloneSpec.Snapshot = image_mo.Snapshot.CurrentSnapshot
     }
 
-	task, err := source_vm.Clone(folder, d.Get("name").(string), cloneSpec)
+	task, err := image.Clone(folder, d.Get("name").(string), cloneSpec)
 	if err != nil {
 		return fmt.Errorf("Error clonning vm: %s", err)
 	}
