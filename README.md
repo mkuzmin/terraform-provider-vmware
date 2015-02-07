@@ -9,7 +9,7 @@ Create a virtual machine on VMware vCenter by cloning an existing VM or template
 - Create a configuration file:
 ```
 provider "vsphere" {
-    server = "vcenter-server"
+    vcenter_server = "vcenter.domain.local"
 # or set VSPHERE_USER environment variable
     user = "account"
 # or set VSPHERE_PASSWORD environment variable

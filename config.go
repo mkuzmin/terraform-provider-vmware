@@ -8,13 +8,13 @@ import (
 )
 
 type Config struct {
-	Server string
+	vCenter string
 	User string
 	Password string
 }
 
 func (c *Config) Client() (*govmomi.Client, error) {
-	u, err := url.Parse(fmt.Sprintf ("https://%s:%s@%s/sdk", c.User, c.Password, c.Server))
+	u, err := url.Parse(fmt.Sprintf ("https://%s:%s@%s/sdk", c.User, c.Password, c.vCenter))
 	if err != nil {
 		return nil, fmt.Errorf("Incorrect vCenter server address: %s", err)
 	}

@@ -8,7 +8,7 @@ import (
 func Provider() terraform.ResourceProvider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
-			"server": &schema.Schema{
+			"vcenter_server": &schema.Schema{
 				Type:        schema.TypeString,
 				Required:    true,
 				Description: "vCenter server address",
@@ -37,7 +37,7 @@ func Provider() terraform.ResourceProvider {
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	config := Config{
-		Server: d.Get("server").(string),
+		vCenter: d.Get("vcenter_server").(string),
 		User: d.Get("user").(string),
 		Password: d.Get("password").(string),
 	}
