@@ -5,6 +5,7 @@ import (
 	"log"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/vmware/govmomi"
+    "github.com/vmware/govmomi/find"
 	"github.com/vmware/govmomi/vim25/mo"
 	"github.com/vmware/govmomi/vim25/types"
 )
@@ -24,9 +25,11 @@ func resourceVirtualMachine() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
+
 			"datacenter": &schema.Schema{
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
+				Computed: true,
 			},
 			"folder": &schema.Schema{
 				Type:     schema.TypeString,
@@ -43,9 +46,11 @@ func resourceVirtualMachine() *schema.Resource {
 				Optional: true,
                 Computed: true,
             },
+
 			"linked_clone": &schema.Schema{
 				Type:     schema.TypeBool,
 				Optional: true,
+                Default: false,
 			},
 			"cpus": &schema.Schema{
 				Type:     schema.TypeInt,
@@ -62,6 +67,7 @@ func resourceVirtualMachine() *schema.Resource {
 				Optional: true,
                 Default:  true,
 			},
+
 			"ip_address": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
@@ -73,8 +79,24 @@ func resourceVirtualMachine() *schema.Resource {
 func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*govmomi.Client)
 
+    dc_name := d.Get("datacenter").(string)
+    if dc_name == "" {
+        finder := find.NewFinder(client, false)
+        dc, err := finder.DefaultDatacenter()
+        if err != nil {
+            return fmt.Errorf("Error reading default datacenter: %s", err)
+        }
+        var dc_mo mo.Datacenter
+        err = client.Properties(dc.Reference(), []string{"name"}, &dc_mo)
+        if err != nil {
+            return fmt.Errorf("Error reading datacenter name: %s", err)
+        }
+        dc_name = dc_mo.Name
+        d.Set("datacenter", dc_name)
+    }
+
 	image_name := d.Get("image").(string)
-    image_ref, err := client.SearchIndex().FindByInventoryPath(fmt.Sprintf("%s/vm/%s", d.Get("datacenter").(string), image_name))
+    image_ref, err := client.SearchIndex().FindByInventoryPath(fmt.Sprintf("%s/vm/%s", dc_name, image_name))
 	if err != nil {
 		return fmt.Errorf("Error reading vm: %s", err)
 	}
@@ -87,7 +109,7 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
     var image_mo mo.VirtualMachine
     var folder *govmomi.Folder
     if d.Get("folder").(string) != "" {
-        folder_ref, err = client.SearchIndex().FindByInventoryPath(fmt.Sprintf("%v/vm/%v", d.Get("datacenter").(string), d.Get("folder").(string)))
+        folder_ref, err = client.SearchIndex().FindByInventoryPath(fmt.Sprintf("%v/vm/%v", dc_name, d.Get("folder").(string)))
         if err != nil {
             return fmt.Errorf("Error reading folder: %s", err)
         }
@@ -111,7 +133,7 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
     pool_name := d.Get("resource_pool").(string)
     var pool_mor types.ManagedObjectReference
     if host_name != "" && pool_name != ""	{
-        pool_ref, err := client.SearchIndex().FindByInventoryPath(fmt.Sprintf("%v/host/%v/Resources/%v", d.Get("datacenter").(string), host_name, pool_name))
+        pool_ref, err := client.SearchIndex().FindByInventoryPath(fmt.Sprintf("%v/host/%v/Resources/%v", dc_name, host_name, pool_name))
         if err != nil {
             return fmt.Errorf("Error reading resource pool: %s", err)
         }
@@ -182,6 +204,7 @@ func resourceVirtualMachineRead(d *schema.ResourceData, meta interface{}) error 
     var vm_mo mo.VirtualMachine
     err := client.Properties(vm.Reference(), []string{"summary"}, &vm_mo)
     if err != nil {
+        log.Printf("[INFO] Cannot read VM properties: %s", err)
         d.SetId("")
         return nil
     }
