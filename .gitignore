@@ -1,3 +1,11 @@
 .idea/
 *.iml
 terraform-provider-vsphere
+bin/
+.vagrant/
+*.tf
+terraform.tfplan
+terraform.tfvars
+terraform.tfstate
+terraform.tfstate.backup
+*.log
