@@ -21,6 +21,9 @@ test: fmtcheck errcheck
 	echo $(TEST) | \
 		xargs -t -n4 go test $(TESTARGS) -timeout=60s -parallel=4
 
+# testacc runs acceptance tests
+testacc: fmtcheck
+	TF_ACC=1 go test $(TEST) -v $(TESTARGS) -timeout 120m
 
 # testrace runs the race checker
 testrace: fmtcheck
