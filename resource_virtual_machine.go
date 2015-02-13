@@ -105,8 +105,13 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
     }
     image := image_ref.(*govmomi.VirtualMachine)
 
-	var folder_ref govmomi.Reference
     var image_mo mo.VirtualMachine
+    err = client.Properties(image.Reference(), []string{"parent", "config.template", "resourcePool", "snapshot"}, &image_mo)
+    if err != nil {
+        return fmt.Errorf("Error reading base VM properties: %s", err)
+    }
+
+	var folder_ref govmomi.Reference
     var folder *govmomi.Folder
     if d.Get("folder").(string) != "" {
         folder_ref, err = client.SearchIndex().FindByInventoryPath(fmt.Sprintf("%v/vm/%v", dc_name, d.Get("folder").(string)))
@@ -119,30 +124,43 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
 
         folder = folder_ref.(*govmomi.Folder)
     } else {
-        err = client.Properties(image.Reference(), []string{"parent"}, &image_mo)
-        if err != nil {
-            return fmt.Errorf("Error reading parent VM folder")
-        }
         folder = govmomi.NewFolder(client, *image_mo.Parent)
     }
 
 
-	var relocateSpec types.VirtualMachineRelocateSpec
-
     host_name := d.Get("host").(string)
-    pool_name := d.Get("resource_pool").(string)
-    var pool_mor types.ManagedObjectReference
-    if host_name != "" && pool_name != ""	{
-        pool_ref, err := client.SearchIndex().FindByInventoryPath(fmt.Sprintf("%v/host/%v/Resources/%v", dc_name, host_name, pool_name))
-        if err != nil {
-            return fmt.Errorf("Error reading resource pool: %s", err)
+    if host_name == "" {
+        if image_mo.Config.Template == true {
+            return fmt.Errorf("Image is a template, 'host' is a required")
+        } else {
+            var pool_mo mo.ResourcePool
+            err = client.Properties(*image_mo.ResourcePool, []string{"owner"}, &pool_mo)
+            if err != nil {
+                return fmt.Errorf("Error reading resource pool of base VM: %s", err)
+            }
+
+            var host_mo mo.ComputeResource
+            err = client.Properties(pool_mo.Owner, []string{"name"}, &host_mo)
+            if err != nil {
+                return fmt.Errorf("Error reading host of base VM: %s", err)
+            }
+            host_name = host_mo.Name
         }
-        if pool_ref == nil {
-            return fmt.Errorf("Cannot find resource pool %s", pool_name)
-        }
-        pool_mor = pool_ref.Reference()
-        relocateSpec.Pool = &pool_mor
     }
+
+    pool_name := d.Get("resource_pool").(string)
+    pool_ref, err := client.SearchIndex().FindByInventoryPath(fmt.Sprintf("%v/host/%v/Resources/%v", dc_name, host_name, pool_name))
+    if err != nil {
+        return fmt.Errorf("Error reading resource pool: %s", err)
+    }
+    if pool_ref == nil {
+        return fmt.Errorf("Cannot find resource pool %s", pool_name)
+    }
+
+	var relocateSpec types.VirtualMachineRelocateSpec
+    var pool_mor types.ManagedObjectReference
+    pool_mor = pool_ref.Reference()
+    relocateSpec.Pool = &pool_mor
 
 	if d.Get("linked_clone").(bool) {
 		relocateSpec.DiskMoveType = "createNewChildDiskBacking"
@@ -161,12 +179,8 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
         PowerOn:  d.Get("power_on").(bool),
 	}
     if d.Get("linked_clone").(bool) {
-        err = client.Properties(image.Reference(), []string{"snapshot"}, &image_mo)
-        if err != nil {
-            return fmt.Errorf("Error reading snapshot")
-        }
         if image_mo.Snapshot == nil {
-            return fmt.Errorf("Image VM has no snapshots")
+            return fmt.Errorf("`linked_clone=true`, but image VM has no snapshots")
         }
         cloneSpec.Snapshot = image_mo.Snapshot.CurrentSnapshot
     }
