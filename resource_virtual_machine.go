@@ -8,6 +8,7 @@ import (
     "github.com/vmware/govmomi/find"
 	"github.com/vmware/govmomi/vim25/mo"
 	"github.com/vmware/govmomi/vim25/types"
+    "strings"
 )
 
 func resourceVirtualMachine() *schema.Resource {
@@ -139,12 +140,23 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
                 return fmt.Errorf("Error reading resource pool of base VM: %s", err)
             }
 
-            var host_mo mo.ComputeResource
-            err = client.Properties(pool_mo.Owner, []string{"name"}, &host_mo)
-            if err != nil {
-                return fmt.Errorf("Error reading host of base VM: %s", err)
+            if strings.Contains(pool_mo.Owner.Value, "domain-s") {
+                var host_mo mo.ComputeResource
+                err = client.Properties(pool_mo.Owner, []string{"name"}, &host_mo)
+                if err != nil {
+                    return fmt.Errorf("Error reading host of base VM: %s", err)
+                }
+                host_name = host_mo.Name
+            } else if strings.Contains(pool_mo.Owner.Value, "domain-c") {
+                var cluster_mo mo.ClusterComputeResource
+                err = client.Properties(pool_mo.Owner, []string{"name"}, &cluster_mo)
+                if err != nil {
+                    return fmt.Errorf("Error reading cluster of base VM: %s", err)
+                }
+                host_name = cluster_mo.Name
+            } else {
+                return fmt.Errorf("Unknown compute resource format of base VM: %s", pool_mo.Owner.Value)
             }
-            host_name = host_mo.Name
         }
     }
 
