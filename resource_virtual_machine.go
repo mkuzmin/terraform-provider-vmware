@@ -63,6 +63,10 @@ func resourceVirtualMachine() *schema.Resource {
 				Optional: true,
                 Computed: true,
 			},
+			"configuration_parameters": &schema.Schema{
+				Type:     schema.TypeMap,
+				Optional: true,
+			},
 			"power_on": &schema.Schema{
 				Type:     schema.TypeBool,
 				Optional: true,
@@ -183,6 +187,21 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
     }
     if d.Get("memory") != nil {
         confSpec.MemoryMB = int64(d.Get("memory").(int))
+    }
+
+    params := d.Get("configuration_parameters").(map[string]interface{})
+    var ov []types.BaseOptionValue
+    if len(params) > 0 {
+        for k, v := range params {
+            key := k
+            value := v
+            o := types.OptionValue{
+                Key:   key,
+                Value: &value,
+            }
+            ov = append(ov, &o)
+        }
+        confSpec.ExtraConfig = ov
     }
 
 	cloneSpec := types.VirtualMachineCloneSpec{
