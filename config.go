@@ -11,6 +11,7 @@ type Config struct {
 	vCenter string
 	User string
 	Password string
+    Insecure bool
 }
 
 func (c *Config) Client() (*govmomi.Client, error) {
@@ -18,7 +19,7 @@ func (c *Config) Client() (*govmomi.Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Incorrect vCenter server address: %s", err)
 	}
-	client, err := govmomi.NewClient(*u, true)
+	client, err := govmomi.NewClient(*u, c.Insecure)
 	if err != nil {
 		return nil, fmt.Errorf("Error setting up client: %s", err)
 	}
