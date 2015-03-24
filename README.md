@@ -28,6 +28,8 @@ $ terraform apply
 - `vcenter_server` - address in `hostname[:port]` format.
 - `user` - alternatively can be specified via `VSPHERE_USER` environment variable.
 - `password` - alternatively can be specified via `VSPHERE_PASSWORD` environment variable.
+- `insecure_connection` - Do not check vCenter server SSL certificate. *False* by default.
+
 - `name` of new virtual machine.
 - `image` - A name of a base VM or template to clone from. Should include a path in VM folder hierarchy: `folder/subfolder/vm-name`.
 
@@ -39,6 +41,7 @@ $ terraform apply
 - `linked_clone` - if *false* (default), full clone is performed from a current state. If *true*, machine is created as a [linked clone](https://pubs.vmware.com/vcd-51/topic/com.vmware.vcloud.admin.doc_51/GUID-4C232B62-4C95-44FF-AD8F-DA2588A5BACC.html) from latest snapshot of base VM.
 - `cpus` - a number of CPU sockets in the new VM. By default the same, as base VM.
 - `memory` - RAM size in MB. By default the same, as base VM.
+- `configuration_parameters` - custom VM parameters.
 - `power_on` - if *true* (default), start the newly created machine, and wait till guest OS reports its IP address. VMware Tools must be installed. Timeout is 15 minutes.
 
 ## Computed Parameters
@@ -50,6 +53,7 @@ provider "vsphere" {
   vcenter_server = "vcenter.domain.local"
   user = "domain\user"
   password = "secret"
+  insecure_connection = true
 }
 
 resource "vsphere_virtual_machine" "frontend" {
@@ -64,6 +68,11 @@ resource "vsphere_virtual_machine" "frontend" {
   linked_clone = true
   cpus = 2
   memory = 8192
+  configuration_parameters = {
+    isolation.tools.copy.disable = "false"
+    isolation.tools.paste.disable = "false"
+  }
+
   power_on = true
 }
 
