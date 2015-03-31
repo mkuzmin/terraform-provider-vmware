@@ -63,6 +63,10 @@ func resourceVirtualMachine() *schema.Resource {
 				Optional: true,
                 Computed: true,
 			},
+			"customization_domain": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 			"configuration_parameters": &schema.Schema{
 				Type:     schema.TypeMap,
 				Optional: true,
@@ -111,7 +115,7 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
     image := image_ref.(*govmomi.VirtualMachine)
 
     var image_mo mo.VirtualMachine
-    err = client.Properties(image.Reference(), []string{"parent", "config.template", "resourcePool", "snapshot"}, &image_mo)
+    err = client.Properties(image.Reference(), []string{"parent", "config.template", "resourcePool", "snapshot", "guest.guestFamily"}, &image_mo)
     if err != nil {
         return fmt.Errorf("Error reading base VM properties: %s", err)
     }
@@ -214,6 +218,31 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
             return fmt.Errorf("`linked_clone=true`, but image VM has no snapshots")
         }
         cloneSpec.Snapshot = image_mo.Snapshot.CurrentSnapshot
+    }
+
+    domain := d.Get("customization_domain").(string)
+    if domain != "" {
+        if image_mo.Guest == nil {
+            return fmt.Errorf("Base image OS family is unknown")
+        }
+        if image_mo.Guest.GuestFamily != "linuxGuest" {
+            return fmt.Errorf("Guest customization is supported only for Linux. Base image OS family is: %s", image_mo.Guest.GuestFamily)
+        }
+        customizationSpec := types.CustomizationSpec{
+            GlobalIPSettings: types.CustomizationGlobalIPSettings{},
+            Identity: &types.CustomizationLinuxPrep{
+                HostName: &types.CustomizationVirtualMachineName{},
+                Domain: domain,
+            },
+            NicSettingMap: []types.CustomizationAdapterMapping {
+                {
+                    Adapter: types.CustomizationIPSettings{
+                        Ip: &types.CustomizationDhcpIpGenerator{},
+                    },
+                },
+            },
+        }
+        cloneSpec.Customization = &customizationSpec
     }
 
 	task, err := image.Clone(folder, d.Get("name").(string), cloneSpec)
