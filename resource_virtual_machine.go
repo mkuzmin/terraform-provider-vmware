@@ -70,7 +70,16 @@ func resourceVirtualMachine() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
-			"configuration_parameters": &schema.Schema{
+            "ip_address": &schema.Schema{
+                Type:     schema.TypeString,
+                Optional: true,
+                Computed: true,
+            },
+            "subnet_mask": &schema.Schema{
+                Type:     schema.TypeString,
+                Optional: true,
+            },
+            "configuration_parameters": &schema.Schema{
 				Type:     schema.TypeMap,
 				Optional: true,
                 ForceNew: true,
@@ -80,12 +89,7 @@ func resourceVirtualMachine() *schema.Resource {
 				Optional: true,
                 Default:  true,
 			},
-
-			"ip_address": &schema.Schema{
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-		},
+        },
 	}
 }
 
@@ -225,6 +229,7 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
     }
 
     domain := d.Get("domain").(string)
+    ip_address := d.Get("ip_address").(string)
     if domain != "" {
         if image_mo.Guest == nil {
             return fmt.Errorf("Base image OS family is unknown")
@@ -240,13 +245,26 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
             },
             NicSettingMap: []types.CustomizationAdapterMapping {
                 {
-                    Adapter: types.CustomizationIPSettings{
-                        Ip: &types.CustomizationDhcpIpGenerator{},
-                    },
+                    Adapter: types.CustomizationIPSettings{},
                 },
             },
         }
+        if ip_address != "" {
+            mask := d.Get("subnet_mask").(string)
+            if mask == "" {
+                return fmt.Errorf("'subnet_mask' must be set, if static 'ip_address' is specified")
+            }
+            customizationSpec.NicSettingMap[0].Adapter.Ip = &types.CustomizationFixedIp{
+                IpAddress: ip_address,
+            }
+            customizationSpec.NicSettingMap[0].Adapter.SubnetMask = d.Get("subnet_mask").(string)
+
+        } else {
+            customizationSpec.NicSettingMap[0].Adapter.Ip = &types.CustomizationDhcpIpGenerator{}
+        }
         cloneSpec.Customization = &customizationSpec
+    } else if ip_address != "" {
+        return fmt.Errorf("'domain' must be set, if static 'ip_address' is specified")
     }
 
 	task, err := image.Clone(folder, d.Get("name").(string), cloneSpec)
@@ -262,7 +280,7 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
     d.SetId(vm_mor.Value)
     vm := govmomi.NewVirtualMachine(client, vm_mor)
     // workaround for https://github.com/vmware/govmomi/issues/218
-    if d.Get("power_on").(bool) {
+    if ip_address=="" && d.Get("power_on").(bool) {
         ip, err := vm.WaitForIP()
         if err != nil {
             log.Printf("[ERROR] Cannot read ip address: %s", err)
