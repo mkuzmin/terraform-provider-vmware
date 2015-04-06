@@ -21,10 +21,12 @@ func resourceVirtualMachine() *schema.Resource {
 			"name": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
+                ForceNew: true,
 			},
 			"image": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
+                ForceNew: true,
 			},
 
 			"datacenter": &schema.Schema{
@@ -52,6 +54,7 @@ func resourceVirtualMachine() *schema.Resource {
 				Type:     schema.TypeBool,
 				Optional: true,
                 Default: false,
+                ForceNew: true,
 			},
 			"cpus": &schema.Schema{
 				Type:     schema.TypeInt,
@@ -70,6 +73,7 @@ func resourceVirtualMachine() *schema.Resource {
 			"configuration_parameters": &schema.Schema{
 				Type:     schema.TypeMap,
 				Optional: true,
+                ForceNew: true,
 			},
 			"power_on": &schema.Schema{
 				Type:     schema.TypeBool,
