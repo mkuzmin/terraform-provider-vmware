@@ -66,7 +66,7 @@ func resourceVirtualMachine() *schema.Resource {
 				Optional: true,
                 Computed: true,
 			},
-			"customization_domain": &schema.Schema{
+			"domain": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 			},
@@ -224,7 +224,7 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
         cloneSpec.Snapshot = image_mo.Snapshot.CurrentSnapshot
     }
 
-    domain := d.Get("customization_domain").(string)
+    domain := d.Get("domain").(string)
     if domain != "" {
         if image_mo.Guest == nil {
             return fmt.Errorf("Base image OS family is unknown")
