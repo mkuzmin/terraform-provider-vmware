@@ -127,7 +127,7 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
     image := image_ref.(*govmomi.VirtualMachine)
 
     var image_mo mo.VirtualMachine
-    err = client.Properties(image.Reference(), []string{"parent", "config.template", "resourcePool", "snapshot", "guest.guestFamily"}, &image_mo)
+    err = client.Properties(image.Reference(), []string{"parent", "config.template", "resourcePool", "snapshot", "guest.toolsVersionStatus2", "guest.guestFamily"}, &image_mo)
     if err != nil {
         return fmt.Errorf("Error reading base VM properties: %s", err)
     }
@@ -235,8 +235,8 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
     domain := d.Get("domain").(string)
     ip_address := d.Get("ip_address").(string)
     if domain != "" {
-        if image_mo.Guest == nil {
-            return fmt.Errorf("Base image OS family is unknown")
+        if image_mo.Guest.ToolsVersionStatus2 == "guestToolsNotInstalled" {
+            return fmt.Errorf("VMware tools are not installed in base VM")
         }
         if image_mo.Guest.GuestFamily != "linuxGuest" {
             return fmt.Errorf("Guest customization is supported only for Linux. Base image OS family is: %s", image_mo.Guest.GuestFamily)
