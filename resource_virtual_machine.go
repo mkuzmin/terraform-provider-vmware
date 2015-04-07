@@ -79,6 +79,10 @@ func resourceVirtualMachine() *schema.Resource {
                 Type:     schema.TypeString,
                 Optional: true,
             },
+            "gateway": &schema.Schema{
+                Type:     schema.TypeString,
+                Optional: true,
+            },
             "configuration_parameters": &schema.Schema{
 				Type:     schema.TypeMap,
 				Optional: true,
@@ -258,7 +262,10 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
                 IpAddress: ip_address,
             }
             customizationSpec.NicSettingMap[0].Adapter.SubnetMask = d.Get("subnet_mask").(string)
-
+            gateway := d.Get("gateway").(string)
+            if gateway != "" {
+                customizationSpec.NicSettingMap[0].Adapter.Gateway = []string{gateway}
+            }
         } else {
             customizationSpec.NicSettingMap[0].Adapter.Ip = &types.CustomizationDhcpIpGenerator{}
         }
