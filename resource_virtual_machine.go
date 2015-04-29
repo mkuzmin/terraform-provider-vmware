@@ -127,7 +127,7 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
     image := image_ref.(*govmomi.VirtualMachine)
 
     var image_mo mo.VirtualMachine
-    err = client.Properties(image.Reference(), []string{"parent", "config.template", "resourcePool", "snapshot", "guest.toolsVersionStatus2", "guest.guestFamily"}, &image_mo)
+    err = client.Properties(image.Reference(), []string{"parent", "config.template", "resourcePool", "snapshot", "guest.toolsVersionStatus2", "config.guestFullName"}, &image_mo)
     if err != nil {
         return fmt.Errorf("Error reading base VM properties: %s", err)
     }
@@ -238,8 +238,8 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
         if image_mo.Guest.ToolsVersionStatus2 == "guestToolsNotInstalled" {
             return fmt.Errorf("VMware tools are not installed in base VM")
         }
-        if image_mo.Guest.GuestFamily != "linuxGuest" {
-            return fmt.Errorf("Guest customization is supported only for Linux. Base image OS family is: %s", image_mo.Guest.GuestFamily)
+        if !strings.Contains(image_mo.Config.GuestFullName, "Linux") && !strings.Contains(image_mo.Config.GuestFullName, "CentOS") {
+            return fmt.Errorf("Guest customization is supported only for Linux. Base image OS is: %s", image_mo.Config.GuestFullName)
         }
         customizationSpec := types.CustomizationSpec{
             GlobalIPSettings: types.CustomizationGlobalIPSettings{},
