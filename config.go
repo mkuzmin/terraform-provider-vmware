@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/url"
 	"github.com/vmware/govmomi"
+	"golang.org/x/net/context"
 )
 
 type Config struct {
@@ -19,7 +20,7 @@ func (c *Config) Client() (*govmomi.Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Incorrect vCenter server address: %s", err)
 	}
-	client, err := govmomi.NewClient(*u, c.Insecure)
+	client, err := govmomi.NewClient(context.TODO(), u, c.Insecure)
 	if err != nil {
 		return nil, fmt.Errorf("Error setting up client: %s", err)
 	}

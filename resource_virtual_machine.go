@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"log"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/vmware/govmomi"
+    "golang.org/x/net/context"
     "github.com/vmware/govmomi/find"
+    "github.com/vmware/govmomi/object"
+    "github.com/vmware/govmomi/property"
+    "github.com/vmware/govmomi/vim25"
 	"github.com/vmware/govmomi/vim25/mo"
 	"github.com/vmware/govmomi/vim25/types"
     "strings"
@@ -98,17 +101,17 @@ func resourceVirtualMachine() *schema.Resource {
 }
 
 func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*govmomi.Client)
+	client := meta.(*vim25.Client)
 
     dc_name := d.Get("datacenter").(string)
     if dc_name == "" {
         finder := find.NewFinder(client, false)
-        dc, err := finder.DefaultDatacenter()
+        dc, err := finder.DefaultDatacenter(context.TODO())
         if err != nil {
             return fmt.Errorf("Error reading default datacenter: %s", err)
         }
         var dc_mo mo.Datacenter
-        err = client.Properties(dc.Reference(), []string{"name"}, &dc_mo)
+        err = dc.Properties(context.TODO(), dc.Reference(), []string{"name"}, &dc_mo)
         if err != nil {
             return fmt.Errorf("Error reading datacenter name: %s", err)
         }
@@ -117,25 +120,25 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
     }
 
 	image_name := d.Get("image").(string)
-    image_ref, err := client.SearchIndex().FindByInventoryPath(fmt.Sprintf("%s/vm/%s", dc_name, image_name))
+    image_ref, err := object.NewSearchIndex(client).FindByInventoryPath(context.TODO(), fmt.Sprintf("%s/vm/%s", dc_name, image_name))
 	if err != nil {
 		return fmt.Errorf("Error reading vm: %s", err)
 	}
     if image_ref == nil {
         return fmt.Errorf("Cannot find image %s", image_name)
     }
-    image := image_ref.(*govmomi.VirtualMachine)
+    image := image_ref.(*object.VirtualMachine)
 
     var image_mo mo.VirtualMachine
-    err = client.Properties(image.Reference(), []string{"parent", "config.template", "resourcePool", "snapshot", "guest.toolsVersionStatus2", "config.guestFullName"}, &image_mo)
+    err = image.Properties(context.TODO(), image.Reference(), []string{"parent", "config.template", "resourcePool", "snapshot", "guest.toolsVersionStatus2", "config.guestFullName"}, &image_mo)
     if err != nil {
         return fmt.Errorf("Error reading base VM properties: %s", err)
     }
 
-	var folder_ref govmomi.Reference
-    var folder *govmomi.Folder
+	var folder_ref object.Reference
+    var folder *object.Folder
     if d.Get("folder").(string) != "" {
-        folder_ref, err = client.SearchIndex().FindByInventoryPath(fmt.Sprintf("%v/vm/%v", dc_name, d.Get("folder").(string)))
+        folder_ref, err = object.NewSearchIndex(client).FindByInventoryPath(context.TODO(), fmt.Sprintf("%v/vm/%v", dc_name, d.Get("folder").(string)))
         if err != nil {
             return fmt.Errorf("Error reading folder: %s", err)
         }
@@ -143,9 +146,9 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
             return fmt.Errorf("Cannot find folder %s", d.Get("folder").(string))
         }
 
-        folder = folder_ref.(*govmomi.Folder)
+        folder = folder_ref.(*object.Folder)
     } else {
-        folder = govmomi.NewFolder(client, *image_mo.Parent)
+        folder = object.NewFolder(client, *image_mo.Parent)
     }
 
 
@@ -155,21 +158,21 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
             return fmt.Errorf("Image is a template, 'host' is a required")
         } else {
             var pool_mo mo.ResourcePool
-            err = client.Properties(*image_mo.ResourcePool, []string{"owner"}, &pool_mo)
+            err = property.DefaultCollector(client).RetrieveOne(context.TODO(), *image_mo.ResourcePool, []string{"owner"}, &pool_mo)
             if err != nil {
                 return fmt.Errorf("Error reading resource pool of base VM: %s", err)
             }
 
             if strings.Contains(pool_mo.Owner.Value, "domain-s") {
                 var host_mo mo.ComputeResource
-                err = client.Properties(pool_mo.Owner, []string{"name"}, &host_mo)
+                err = property.DefaultCollector(client).RetrieveOne(context.TODO(), pool_mo.Owner, []string{"name"}, &host_mo)
                 if err != nil {
                     return fmt.Errorf("Error reading host of base VM: %s", err)
                 }
                 host_name = host_mo.Name
             } else if strings.Contains(pool_mo.Owner.Value, "domain-c") {
                 var cluster_mo mo.ClusterComputeResource
-                err = client.Properties(pool_mo.Owner, []string{"name"}, &cluster_mo)
+                err = property.DefaultCollector(client).RetrieveOne(context.TODO(), pool_mo.Owner, []string{"name"}, &cluster_mo)
                 if err != nil {
                     return fmt.Errorf("Error reading cluster of base VM: %s", err)
                 }
@@ -181,7 +184,7 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
     }
 
     pool_name := d.Get("resource_pool").(string)
-    pool_ref, err := client.SearchIndex().FindByInventoryPath(fmt.Sprintf("%v/host/%v/Resources/%v", dc_name, host_name, pool_name))
+    pool_ref, err := object.NewSearchIndex(client).FindByInventoryPath(context.TODO(), fmt.Sprintf("%v/host/%v/Resources/%v", dc_name, host_name, pool_name))
     if err != nil {
         return fmt.Errorf("Error reading resource pool: %s", err)
     }
@@ -274,21 +277,21 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
         return fmt.Errorf("'domain' must be set, if static 'ip_address' is specified")
     }
 
-	task, err := image.Clone(folder, d.Get("name").(string), cloneSpec)
+	task, err := image.Clone(context.TODO(), folder, d.Get("name").(string), cloneSpec)
 	if err != nil {
 		return fmt.Errorf("Error clonning vm: %s", err)
 	}
-	info, err := task.WaitForResult(nil)
+	info, err := task.WaitForResult(context.TODO(), nil)
 	if err != nil {
 		return fmt.Errorf("Error clonning vm: %s", err)
 	}
 
 	vm_mor := info.Result.(types.ManagedObjectReference)
     d.SetId(vm_mor.Value)
-    vm := govmomi.NewVirtualMachine(client, vm_mor)
+    vm := object.NewVirtualMachine(client, vm_mor)
     // workaround for https://github.com/vmware/govmomi/issues/218
     if ip_address=="" && d.Get("power_on").(bool) {
-        ip, err := vm.WaitForIP()
+        ip, err := vm.WaitForIP(context.TODO())
         if err != nil {
             log.Printf("[ERROR] Cannot read ip address: %s", err)
         } else {
@@ -300,12 +303,12 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
 }
 
 func resourceVirtualMachineRead(d *schema.ResourceData, meta interface{}) error {
-    client := meta.(*govmomi.Client)
+    client := meta.(*vim25.Client)
     vm_mor := types.ManagedObjectReference{Type: "VirtualMachine", Value: d.Id() }
-    vm := govmomi.NewVirtualMachine(client, vm_mor)
+    vm := object.NewVirtualMachine(client, vm_mor)
 
     var vm_mo mo.VirtualMachine
-    err := client.Properties(vm.Reference(), []string{"summary"}, &vm_mo)
+    err := vm.Properties(context.TODO(), vm.Reference(), []string{"summary"}, &vm_mo)
     if err != nil {
         log.Printf("[INFO] Cannot read VM properties: %s", err)
         d.SetId("")
@@ -322,7 +325,7 @@ func resourceVirtualMachineRead(d *schema.ResourceData, meta interface{}) error 
     }
 
     if d.Get("power_on").(bool) {
-        ip, err := vm.WaitForIP()
+        ip, err := vm.WaitForIP(context.TODO())
         if err != nil {
             log.Printf("[ERROR] Cannot read ip address: %s", err)
         } else {
@@ -334,21 +337,21 @@ func resourceVirtualMachineRead(d *schema.ResourceData, meta interface{}) error 
 }
 
 func resourceVirtualMachineDelete(d *schema.ResourceData, meta interface{}) error {
-    client := meta.(*govmomi.Client)
+    client := meta.(*vim25.Client)
     vm_mor := types.ManagedObjectReference{Type: "VirtualMachine", Value: d.Id() }
-    vm := govmomi.NewVirtualMachine(client, vm_mor)
+    vm := object.NewVirtualMachine(client, vm_mor)
 
-    task, err := vm.PowerOff()
+    task, err := vm.PowerOff(context.TODO())
     if err != nil {
         return fmt.Errorf("Error powering vm off: %s", err)
     }
-    task.WaitForResult(nil)
+    task.WaitForResult(context.TODO(), nil)
 
-    task, err = vm.Destroy()
+    task, err = vm.Destroy(context.TODO())
     if err != nil {
         return fmt.Errorf("Error deleting vm: %s", err)
     }
-    _, err = task.WaitForResult(nil)
+    _, err = task.WaitForResult(context.TODO(), nil)
     if err != nil {
         return fmt.Errorf("Error deleting vm: %s", err)
     }
