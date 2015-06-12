@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/url"
 	"github.com/vmware/govmomi"
+	"github.com/vmware/govmomi/vim25"
 	"golang.org/x/net/context"
 )
 
@@ -15,7 +16,7 @@ type Config struct {
     Insecure bool
 }
 
-func (c *Config) Client() (*govmomi.Client, error) {
+func (c *Config) Client() (*vim25.Client, error) {
 	u, err := url.Parse(fmt.Sprintf ("https://%s:%s@%s/sdk", c.User, c.Password, c.vCenter))
 	if err != nil {
 		return nil, fmt.Errorf("Incorrect vCenter server address: %s", err)
@@ -25,5 +26,5 @@ func (c *Config) Client() (*govmomi.Client, error) {
 		return nil, fmt.Errorf("Error setting up client: %s", err)
 	}
 	log.Printf("[INFO] vSphere Client configured")
-	return client, nil
+	return client.Client, nil
 }
