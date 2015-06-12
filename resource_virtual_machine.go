@@ -296,6 +296,10 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
             log.Printf("[ERROR] Cannot read ip address: %s", err)
         } else {
             d.Set("ip_address", ip)
+            d.SetConnInfo(map[string]string{
+                "type": "ssh",
+                "host": ip,
+            })
         }
     }
 
