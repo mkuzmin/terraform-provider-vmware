@@ -43,6 +43,10 @@ $ terraform apply
 - `memory` - RAM size in MB. By default the same, as base VM.
 - `configuration_parameters` - custom VM parameters.
 - `power_on` - if *true* (default), start the newly created machine, and wait till guest OS reports its IP address. VMware Tools must be installed. Timeout is 15 minutes.
+- `domain` - enables guest VM customization and hostname renaming. The value specifies domain suffix, hostname is got from `name`.
+- `ip_address` - static IP address.
+- `subnet_mask` - required if `ip_address` is specified.
+- `gateway` - used together with `ip_address`.
 
 ## Computed Parameters
 - `ip_address` - if `power_on=true` and VMware Tools are installed in guest OS.
@@ -74,6 +78,20 @@ resource "vsphere_virtual_machine" "frontend" {
   }
 
   power_on = true
+
+  domain = "vsphere.test"
+  ip_address = "192.168.1.10"
+  subnet_mask = "255.255.255.0"
+  gateway = "192.168.1.1"
+
+  provisioner "remote-exec" {
+    connection {
+      user = "user"
+      password = "secret"
+    }
+    inline = "uname"
+  }
+
 }
 
 output "address" {
