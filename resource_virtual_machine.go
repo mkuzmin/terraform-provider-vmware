@@ -72,6 +72,7 @@ func resourceVirtualMachine() *schema.Resource {
 			"domain": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
+                ForceNew: true,
 			},
             "ip_address": &schema.Schema{
                 Type:     schema.TypeString,
@@ -81,10 +82,12 @@ func resourceVirtualMachine() *schema.Resource {
             "subnet_mask": &schema.Schema{
                 Type:     schema.TypeString,
                 Optional: true,
+                ForceNew: true,
             },
             "gateway": &schema.Schema{
                 Type:     schema.TypeString,
                 Optional: true,
+                ForceNew: true,
             },
             "configuration_parameters": &schema.Schema{
 				Type:     schema.TypeMap,
@@ -95,6 +98,7 @@ func resourceVirtualMachine() *schema.Resource {
 				Type:     schema.TypeBool,
 				Optional: true,
                 Default:  true,
+                ForceNew: true,
 			},
         },
 	}
@@ -212,7 +216,7 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
     var ov []types.BaseOptionValue
     if len(params) > 0 {
         for k, v := range params {
-            key := k
+            key := strings.Replace(k, "_",".", -1)
             value := v
             o := types.OptionValue{
                 Key:   key,
