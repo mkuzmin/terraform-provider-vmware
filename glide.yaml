@@ -1,0 +1,17 @@
+package: github.com/mkuzmin/terraform-vsphere
+import:
+- package: github.com/hashicorp/terraform
+  version: v0.6.16
+  subpackages:
+  - helper/schema
+  - plugin
+  - terraform
+- package: github.com/vmware/govmomi
+  version: v0.6.2
+  subpackages:
+  - find
+  - object
+  - property
+  - vim25
+  - vim25/mo
+  - vim25/types
