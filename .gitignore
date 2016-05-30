@@ -1,6 +1,7 @@
 .idea/
 *.iml
 terraform-provider-vsphere
+terraform-vsphere
 bin/
 .vagrant/
 *.tf

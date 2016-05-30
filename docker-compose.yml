@@ -1,0 +1,9 @@
+version: '2'
+services:
+  go:
+    build:
+      context: docker/
+    volumes:
+      - .:/go/src/github.com/mkuzmin/terraform-vsphere/
+    working_dir: /go/src/github.com/mkuzmin/terraform-vsphere/
+    command: ./build.sh
