@@ -1,6 +1,7 @@
 .idea/
 *.iml
-terraform-provider-vsphere
+terraform-provider-vmware
+terraform-provider-vmware.exe
 terraform-vsphere
 bin/
 .vagrant/

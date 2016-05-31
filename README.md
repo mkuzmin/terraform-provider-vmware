@@ -8,12 +8,12 @@ This is a plugin for HashiCorp [Terraform](https://terraform.io/), which helps l
 - [Install](https://terraform.io/docs/plugins/basics.html) it, or put into a directory with configuration files.
 - Create a minimal configuration file `web.tf`:
 ```
-provider "vsphere" {
+provider "vmware" {
   vcenter_server = "vcenter.domain.local"
   user = "root"
   password = "vmware"
 }
-resource "vsphere_virtual_machine" "web" {
+resource "vmware_virtual_machine" "web" {
   name =  "web-1"
   image = "web-base"
 }
@@ -53,14 +53,14 @@ $ terraform apply
 
 ## Complete Example
 ```
-provider "vsphere" {
+provider "vmware" {
   vcenter_server = "vcenter.domain.local"
   user = "domain\user"
   password = "secret"
   insecure_connection = true
 }
 
-resource "vsphere_virtual_machine" "frontend" {
+resource "vmware_virtual_machine" "frontend" {
   name =  "frontend-1"
   image = "App/Templates/frontend-base"
 
@@ -95,6 +95,6 @@ resource "vsphere_virtual_machine" "frontend" {
 }
 
 output "address" {
-  value = "${vsphere_virtual_machine.frontend.ip_address}"
+  value = "${vmware_virtual_machine.frontend.ip_address}"
 }
 ```
