@@ -1,5 +1,5 @@
 provider "vmware" {
-  vcenter_server = "vcenter.vsphere.test"
+  vcenter_server = "vcenter.vsphere5.test"
   user = "root"
   password = "jetbrains"
   insecure_connection = true
