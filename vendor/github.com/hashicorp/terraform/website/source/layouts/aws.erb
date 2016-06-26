@@ -10,6 +10,24 @@
                     <a href="/docs/providers/aws/index.html">AWS Provider</a>
                 </li>
 
+                <li<%= sidebar_current(/^docs-aws-datasource/) %>>
+                <a href="#">Data Sources</a>
+                    <ul class="nav nav-visible">
+                        <li<%= sidebar_current("docs-aws-datasource-ami") %>>
+                            <a href="/docs/providers/aws/d/ami.html">aws_ami</a>
+                        </li>
+                        <li<%= sidebar_current("docs-aws-datasource-availability-zones") %>>
+                            <a href="/docs/providers/aws/d/availability_zones.html">aws_availability_zones</a>
+                        </li>
+                        <li<%= sidebar_current("docs-aws-datasource-iam-policy-document") %>>
+                            <a href="/docs/providers/aws/d/iam_policy_document.html">aws_iam_policy_document</a>
+                        </li>
+                        <li<%= sidebar_current("docs-aws-datasource-s3-bucket-object") %>>
+                            <a href="/docs/providers/aws/d/s3_bucket_object.html">aws_s3_bucket_object</a>
+                        </li>
+                    </ul>
+                </li>
+
                 <li<%= sidebar_current(/^docs-aws-resource-api-gateway/) %>>
                     <a href="#">API Gateway Resources</a>
                     <ul class="nav nav-visible">
@@ -158,7 +176,7 @@
                 </li>
 
 
-                <li<%= sidebar_current(/^docs-aws-resource-(ami|app|autoscaling|ebs|elb|eip|instance|launch|lb|proxy|spot|volume|placement|key-pair)/) %>>
+                <li<%= sidebar_current(/^docs-aws-resource-(ami|app|autoscaling|ebs|elb|eip|instance|launch|lb|proxy|spot|volume|placement|key-pair|elb_attachment)/) %>>
                     <a href="#">EC2 Resources</a>
                     <ul class="nav nav-visible">
 
@@ -212,6 +230,10 @@
 
                         <li<%= sidebar_current("docs-aws-resource-elb") %>>
                             <a href="/docs/providers/aws/r/elb.html">aws_elb</a>
+                        </li>
+
+                        <li<%= sidebar_current("docs-aws-resource-elb-attachment") %>>
+                            <a href="/docs/providers/aws/r/elb_attachment.html">aws_elb</a>
                         </li>
 
                         <li<%= sidebar_current("docs-aws-resource-instance") %>>
@@ -345,6 +367,21 @@
                     </ul>
                 </li>
 
+                <li<%= sidebar_current(/^docs-aws-resource-elastic-transcoder/) %>>
+                    <a href="#">Elastic Transcoder Resources</a>
+                    <ul class="nav nav-visible">
+
+                        <li<%= sidebar_current("docs-aws-resource-elastic-transcoder-pipeline") %>>
+                            <a href="/docs/providers/aws/r/elastic_transcoder_pipeline.html">aws_elasticsearch_domain</a>
+                        </li>
+
+                        <li<%= sidebar_current("docs-aws-resource-elastic-transcoder-preset") %>>
+                            <a href="/docs/providers/aws/r/elastic_transcoder_preset.html">aws_elasticsearch_domain</a>
+                        </li>
+
+                    </ul>
+                </li>
+
                 <li<%= sidebar_current(/^docs-aws-resource-glacier/) %>>
                     <a href="#">Glacier Resources</a>
                     <ul class="nav nav-visible">
@@ -375,6 +412,10 @@
                             <a href="/docs/providers/aws/r/iam_group_policy.html">aws_iam_group_policy</a>
                         </li>
 
+                        <li<%= sidebar_current("docs-aws-resource-iam-group-policy-attachment") %>>
+                            <a href="/docs/providers/aws/r/iam_group_policy_attachment.html">aws_iam_group_policy_attachment</a>
+                        </li>
+
                         <li<%= sidebar_current("docs-aws-resource-iam-group-membership") %>>
                             <a href="/docs/providers/aws/r/iam_group_membership.html">aws_iam_group_membership</a>
                         </li>
@@ -386,6 +427,7 @@
                         <li<%= sidebar_current("docs-aws-resource-iam-policy") %>>
                             <a href="/docs/providers/aws/r/iam_policy.html">aws_iam_policy</a>
                         </li>
+
                         <li<%= sidebar_current("docs-aws-resource-iam-policy-attachment") %>>
                             <a href="/docs/providers/aws/r/iam_policy_attachment.html">aws_iam_policy_attachment</a>
                         </li>
@@ -396,6 +438,10 @@
 
                         <li<%= sidebar_current("docs-aws-resource-iam-role-policy") %>>
                             <a href="/docs/providers/aws/r/iam_role_policy.html">aws_iam_role_policy</a>
+                        </li>
+
+                        <li<%= sidebar_current("docs-aws-resource-iam-role-policy-attachment") %>>
+                            <a href="/docs/providers/aws/r/iam_role_policy_attachment.html">aws_iam_role_policy_attachment</a>
                         </li>
 
                         <li<%= sidebar_current("docs-aws-resource-iam-saml-provider") %>>
@@ -412,6 +458,10 @@
 
                         <li<%= sidebar_current("docs-aws-resource-iam-user-policy") %>>
                             <a href="/docs/providers/aws/r/iam_user_policy.html">aws_iam_user_policy</a>
+                        </li>
+
+                        <li<%= sidebar_current("docs-aws-resource-iam-user-policy-attachment") %>>
+                            <a href="/docs/providers/aws/r/iam_user_policy_attachment.html">aws_iam_user_policy_attachment</a>
                         </li>
 
                         <li<%= sidebar_current("docs-aws-resource-iam-user-ssh-key") %>>
@@ -569,6 +619,10 @@
 
                         <li<%= sidebar_current("docs-aws-resource-rds-cluster-instance") %>>
                             <a href="/docs/providers/aws/r/rds_cluster_instance.html">aws_rds_cluster_instance</a>
+                        </li>
+
+                        <li<%= sidebar_current("docs-aws-resource-rds-cluster-parameter-group") %>>
+                            <a href="/docs/providers/aws/r/rds_cluster_parameter_group.html">aws_rds_cluster_parameter_group</a>
                         </li>
 
                     </ul>

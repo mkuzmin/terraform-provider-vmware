@@ -22,6 +22,30 @@ func TestInterfaceToVariable(t *testing.T) {
 			},
 		},
 		{
+			name:  "empty list",
+			input: []interface{}{},
+			expected: ast.Variable{
+				Type:  ast.TypeList,
+				Value: []ast.Variable{},
+			},
+		},
+		{
+			name:  "empty list of strings",
+			input: []string{},
+			expected: ast.Variable{
+				Type:  ast.TypeList,
+				Value: []ast.Variable{},
+			},
+		},
+		{
+			name:  "int",
+			input: 1,
+			expected: ast.Variable{
+				Type:  ast.TypeString,
+				Value: "1",
+			},
+		},
+		{
 			name:  "list of strings",
 			input: []string{"Hello", "World"},
 			expected: ast.Variable{
@@ -124,6 +148,39 @@ func TestInterfaceToVariable(t *testing.T) {
 								Value: "World",
 							},
 						},
+					},
+				},
+			},
+		},
+		{
+			name:  "empty map",
+			input: map[string]string{},
+			expected: ast.Variable{
+				Type:  ast.TypeMap,
+				Value: map[string]ast.Variable{},
+			},
+		},
+		{
+			name: "three-element map",
+			input: map[string]string{
+				"us-west-1": "ami-123456",
+				"us-west-2": "ami-456789",
+				"eu-west-1": "ami-012345",
+			},
+			expected: ast.Variable{
+				Type: ast.TypeMap,
+				Value: map[string]ast.Variable{
+					"us-west-1": ast.Variable{
+						Type:  ast.TypeString,
+						Value: "ami-123456",
+					},
+					"us-west-2": ast.Variable{
+						Type:  ast.TypeString,
+						Value: "ami-456789",
+					},
+					"eu-west-1": ast.Variable{
+						Type:  ast.TypeString,
+						Value: "ami-012345",
 					},
 				},
 			},

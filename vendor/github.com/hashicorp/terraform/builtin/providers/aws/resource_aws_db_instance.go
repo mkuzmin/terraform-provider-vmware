@@ -44,8 +44,9 @@ func resourceAwsDbInstance() *schema.Resource {
 			},
 
 			"password": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:      schema.TypeString,
+				Optional:  true,
+				Sensitive: true,
 			},
 
 			"engine": &schema.Schema{
@@ -63,6 +64,13 @@ func resourceAwsDbInstance() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
+			},
+
+			"character_set_name": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+				ForceNew: true,
 			},
 
 			"storage_encrypted": &schema.Schema{
@@ -155,7 +163,7 @@ func resourceAwsDbInstance() *schema.Resource {
 			"publicly_accessible": &schema.Schema{
 				Type:     schema.TypeBool,
 				Optional: true,
-				Computed: true,
+				Default:  false,
 			},
 
 			"vpc_security_group_ids": &schema.Schema{
@@ -289,6 +297,13 @@ func resourceAwsDbInstance() *schema.Resource {
 				Computed: true,
 			},
 
+			"kms_key_id": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+				ForceNew: true,
+			},
+
 			"tags": tagsSchema(),
 		},
 	}
@@ -317,6 +332,7 @@ func resourceAwsDbInstanceCreate(d *schema.ResourceData, meta interface{}) error
 			CopyTagsToSnapshot:         aws.Bool(d.Get("copy_tags_to_snapshot").(bool)),
 			DBInstanceClass:            aws.String(d.Get("instance_class").(string)),
 			DBInstanceIdentifier:       aws.String(identifier),
+			PubliclyAccessible:         aws.Bool(d.Get("publicly_accessible").(bool)),
 			Tags:                       tags,
 		}
 		if attr, ok := d.GetOk("iops"); ok {
@@ -333,10 +349,6 @@ func resourceAwsDbInstanceCreate(d *schema.ResourceData, meta interface{}) error
 
 		if attr, ok := d.GetOk("storage_type"); ok {
 			opts.StorageType = aws.String(attr.(string))
-		}
-
-		if attr, ok := d.GetOk("publicly_accessible"); ok {
-			opts.PubliclyAccessible = aws.Bool(attr.(bool))
 		}
 
 		if attr, ok := d.GetOk("db_subnet_group_name"); ok {
@@ -366,8 +378,9 @@ func resourceAwsDbInstanceCreate(d *schema.ResourceData, meta interface{}) error
 			DBInstanceIdentifier:    aws.String(d.Get("identifier").(string)),
 			DBSnapshotIdentifier:    aws.String(d.Get("snapshot_identifier").(string)),
 			AutoMinorVersionUpgrade: aws.Bool(d.Get("auto_minor_version_upgrade").(bool)),
-			Tags:               tags,
-			CopyTagsToSnapshot: aws.Bool(d.Get("copy_tags_to_snapshot").(bool)),
+			PubliclyAccessible:      aws.Bool(d.Get("publicly_accessible").(bool)),
+			Tags:                    tags,
+			CopyTagsToSnapshot:      aws.Bool(d.Get("copy_tags_to_snapshot").(bool)),
 		}
 
 		if attr, ok := d.GetOk("availability_zone"); ok {
@@ -396,14 +409,11 @@ func resourceAwsDbInstanceCreate(d *schema.ResourceData, meta interface{}) error
 
 		if attr, ok := d.GetOk("option_group_name"); ok {
 			opts.OptionGroupName = aws.String(attr.(string))
+
 		}
 
 		if attr, ok := d.GetOk("port"); ok {
 			opts.Port = aws.Int64(int64(attr.(int)))
-		}
-
-		if attr, ok := d.GetOk("publicly_accessible"); ok {
-			opts.PubliclyAccessible = aws.Bool(attr.(bool))
 		}
 
 		if attr, ok := d.GetOk("tde_credential_arn"); ok {
@@ -484,14 +494,20 @@ func resourceAwsDbInstanceCreate(d *schema.ResourceData, meta interface{}) error
 			EngineVersion:           aws.String(d.Get("engine_version").(string)),
 			StorageEncrypted:        aws.Bool(d.Get("storage_encrypted").(bool)),
 			AutoMinorVersionUpgrade: aws.Bool(d.Get("auto_minor_version_upgrade").(bool)),
-			Tags:               tags,
-			CopyTagsToSnapshot: aws.Bool(d.Get("copy_tags_to_snapshot").(bool)),
+			PubliclyAccessible:      aws.Bool(d.Get("publicly_accessible").(bool)),
+			Tags:                    tags,
+			CopyTagsToSnapshot:      aws.Bool(d.Get("copy_tags_to_snapshot").(bool)),
 		}
 
 		attr := d.Get("backup_retention_period")
 		opts.BackupRetentionPeriod = aws.Int64(int64(attr.(int)))
 		if attr, ok := d.GetOk("multi_az"); ok {
 			opts.MultiAZ = aws.Bool(attr.(bool))
+
+		}
+
+		if attr, ok := d.GetOk("character_set_name"); ok {
+			opts.CharacterSetName = aws.String(attr.(string))
 		}
 
 		if attr, ok := d.GetOk("maintenance_window"); ok {
@@ -544,10 +560,6 @@ func resourceAwsDbInstanceCreate(d *schema.ResourceData, meta interface{}) error
 			opts.AvailabilityZone = aws.String(attr.(string))
 		}
 
-		if attr, ok := d.GetOk("publicly_accessible"); ok {
-			opts.PubliclyAccessible = aws.Bool(attr.(bool))
-		}
-
 		if attr, ok := d.GetOk("monitoring_role_arn"); ok {
 			opts.MonitoringRoleArn = aws.String(attr.(string))
 		}
@@ -558,6 +570,10 @@ func resourceAwsDbInstanceCreate(d *schema.ResourceData, meta interface{}) error
 
 		if attr, ok := d.GetOk("option_group_name"); ok {
 			opts.OptionGroupName = aws.String(attr.(string))
+		}
+
+		if attr, ok := d.GetOk("kms_key_id"); ok {
+			opts.KmsKeyId = aws.String(attr.(string))
 		}
 
 		log.Printf("[DEBUG] DB Instance create configuration: %#v", opts)
@@ -632,8 +648,13 @@ func resourceAwsDbInstanceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("maintenance_window", v.PreferredMaintenanceWindow)
 	d.Set("publicly_accessible", v.PubliclyAccessible)
 	d.Set("multi_az", v.MultiAZ)
+	d.Set("kms_key_id", v.KmsKeyId)
 	if v.DBSubnetGroup != nil {
 		d.Set("db_subnet_group_name", v.DBSubnetGroup.DBSubnetGroupName)
+	}
+
+	if v.CharacterSetName != nil {
+		d.Set("character_set_name", v.CharacterSetName)
 	}
 
 	if len(v.DBParameterGroups) > 0 {

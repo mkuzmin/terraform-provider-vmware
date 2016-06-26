@@ -11,7 +11,6 @@ import (
 )
 
 func TestAccAzureRMCdnEndpoint_basic(t *testing.T) {
-
 	ri := acctest.RandInt()
 	config := fmt.Sprintf(testAccAzureRMCdnEndpoint_basic, ri, ri, ri)
 
@@ -20,7 +19,7 @@ func TestAccAzureRMCdnEndpoint_basic(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testCheckAzureRMCdnEndpointDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
 					testCheckAzureRMCdnEndpointExists("azurerm_cdn_endpoint.test"),
@@ -30,8 +29,7 @@ func TestAccAzureRMCdnEndpoint_basic(t *testing.T) {
 	})
 }
 
-func TestAccAzureRMCdnEndpoints_withTags(t *testing.T) {
-
+func TestAccAzureRMCdnEndpoint_withTags(t *testing.T) {
 	ri := acctest.RandInt()
 	preConfig := fmt.Sprintf(testAccAzureRMCdnEndpoint_withTags, ri, ri, ri)
 	postConfig := fmt.Sprintf(testAccAzureRMCdnEndpoint_withTagsUpdate, ri, ri, ri)
@@ -41,12 +39,12 @@ func TestAccAzureRMCdnEndpoints_withTags(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testCheckAzureRMCdnEndpointDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: preConfig,
 				Check: resource.ComposeTestCheckFunc(
 					testCheckAzureRMCdnEndpointExists("azurerm_cdn_endpoint.test"),
 					resource.TestCheckResourceAttr(
-						"azurerm_cdn_endpoint.test", "tags.#", "2"),
+						"azurerm_cdn_endpoint.test", "tags.%", "2"),
 					resource.TestCheckResourceAttr(
 						"azurerm_cdn_endpoint.test", "tags.environment", "Production"),
 					resource.TestCheckResourceAttr(
@@ -54,12 +52,12 @@ func TestAccAzureRMCdnEndpoints_withTags(t *testing.T) {
 				),
 			},
 
-			resource.TestStep{
+			{
 				Config: postConfig,
 				Check: resource.ComposeTestCheckFunc(
 					testCheckAzureRMCdnEndpointExists("azurerm_cdn_endpoint.test"),
 					resource.TestCheckResourceAttr(
-						"azurerm_cdn_endpoint.test", "tags.#", "1"),
+						"azurerm_cdn_endpoint.test", "tags.%", "1"),
 					resource.TestCheckResourceAttr(
 						"azurerm_cdn_endpoint.test", "tags.environment", "staging"),
 				),

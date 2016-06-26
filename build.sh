@@ -1,6 +1,6 @@
 #!/bin/sh -eux
 
-VERSION=0.6-dev
+VERSION=0.7-dev
 
 rm -rf bin
 GOOS=darwin  GOARCH=amd64 go build -o bin/macos/terraform-provider-vmware

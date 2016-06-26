@@ -19,6 +19,9 @@ func resourceAwsEip() *schema.Resource {
 		Read:   resourceAwsEipRead,
 		Update: resourceAwsEipUpdate,
 		Delete: resourceAwsEipDelete,
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"vpc": &schema.Schema{

@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/hashicorp/hil"
@@ -17,21 +18,21 @@ func TestInterpolateFuncCompact(t *testing.T) {
 			// empty string within array
 			{
 				`${compact(split(",", "a,,b"))}`,
-				NewStringList([]string{"a", "b"}).String(),
+				[]interface{}{"a", "b"},
 				false,
 			},
 
 			// empty string at the end of array
 			{
 				`${compact(split(",", "a,b,"))}`,
-				NewStringList([]string{"a", "b"}).String(),
+				[]interface{}{"a", "b"},
 				false,
 			},
 
 			// single empty string
 			{
 				`${compact(split(",", ""))}`,
-				NewStringList([]string{}).String(),
+				[]interface{}{},
 				false,
 			},
 		},
@@ -174,80 +175,90 @@ func TestInterpolateFuncCoalesce(t *testing.T) {
 	})
 }
 
-func TestInterpolateFuncDeprecatedConcat(t *testing.T) {
-	testFunction(t, testFunctionConfig{
-		Cases: []testFunctionCase{
-			{
-				`${concat("foo", "bar")}`,
-				"foobar",
-				false,
-			},
-
-			{
-				`${concat("foo")}`,
-				"foo",
-				false,
-			},
-
-			{
-				`${concat()}`,
-				nil,
-				true,
-			},
-		},
-	})
-}
-
 func TestInterpolateFuncConcat(t *testing.T) {
 	testFunction(t, testFunctionConfig{
 		Cases: []testFunctionCase{
 			// String + list
 			{
 				`${concat("a", split(",", "b,c"))}`,
-				NewStringList([]string{"a", "b", "c"}).String(),
+				[]interface{}{"a", "b", "c"},
 				false,
 			},
 
 			// List + string
 			{
 				`${concat(split(",", "a,b"), "c")}`,
-				NewStringList([]string{"a", "b", "c"}).String(),
+				[]interface{}{"a", "b", "c"},
 				false,
 			},
 
 			// Single list
 			{
 				`${concat(split(",", ",foo,"))}`,
-				NewStringList([]string{"", "foo", ""}).String(),
+				[]interface{}{"", "foo", ""},
 				false,
 			},
 			{
 				`${concat(split(",", "a,b,c"))}`,
-				NewStringList([]string{"a", "b", "c"}).String(),
+				[]interface{}{"a", "b", "c"},
 				false,
 			},
 
 			// Two lists
 			{
 				`${concat(split(",", "a,b,c"), split(",", "d,e"))}`,
-				NewStringList([]string{"a", "b", "c", "d", "e"}).String(),
+				[]interface{}{"a", "b", "c", "d", "e"},
 				false,
 			},
 			// Two lists with different separators
 			{
 				`${concat(split(",", "a,b,c"), split(" ", "d e"))}`,
-				NewStringList([]string{"a", "b", "c", "d", "e"}).String(),
+				[]interface{}{"a", "b", "c", "d", "e"},
 				false,
 			},
 
 			// More lists
 			{
 				`${concat(split(",", "a,b"), split(",", "c,d"), split(",", "e,f"), split(",", "0,1"))}`,
-				NewStringList([]string{"a", "b", "c", "d", "e", "f", "0", "1"}).String(),
+				[]interface{}{"a", "b", "c", "d", "e", "f", "0", "1"},
 				false,
 			},
 		},
 	})
+}
+
+// TODO: This test is split out and calls a private function
+// because there's no good way to get a list of maps into the unit
+// tests due to GH-7142 - once lists of maps can be expressed properly as
+// literals this unit test can be wrapped back into the suite above.
+//
+// Reproduces crash reported in GH-7030.
+func TestInterpolationFuncConcatListOfMaps(t *testing.T) {
+	listOfMapsOne := ast.Variable{
+		Type: ast.TypeList,
+		Value: []ast.Variable{
+			{
+				Type:  ast.TypeMap,
+				Value: map[string]interface{}{"one": "foo"},
+			},
+		},
+	}
+	listOfMapsTwo := ast.Variable{
+		Type: ast.TypeList,
+		Value: []ast.Variable{
+			{
+				Type:  ast.TypeMap,
+				Value: map[string]interface{}{"two": "bar"},
+			},
+		},
+	}
+	args := []interface{}{listOfMapsOne.Value, listOfMapsTwo.Value}
+
+	_, err := interpolationFuncConcat().Callback(args)
+
+	if err == nil || !strings.Contains(err.Error(), "concat() does not support lists of type map") {
+		t.Fatalf("Expected err, got: %v", err)
+	}
 }
 
 func TestInterpolateFuncFile(t *testing.T) {
@@ -338,7 +349,7 @@ func TestInterpolateFuncFormatList(t *testing.T) {
 			// formatlist applies to each list element in turn
 			{
 				`${formatlist("<%s>", split(",", "A,B"))}`,
-				NewStringList([]string{"<A>", "<B>"}).String(),
+				[]interface{}{"<A>", "<B>"},
 				false,
 			},
 			// formatlist repeats scalar elements
@@ -362,7 +373,7 @@ func TestInterpolateFuncFormatList(t *testing.T) {
 			// Works with lists of length 1 [GH-2240]
 			{
 				`${formatlist("%s.id", split(",", "demo-rest-elb"))}`,
-				NewStringList([]string{"demo-rest-elb.id"}).String(),
+				[]interface{}{"demo-rest-elb.id"},
 				false,
 			},
 		},
@@ -371,6 +382,11 @@ func TestInterpolateFuncFormatList(t *testing.T) {
 
 func TestInterpolateFuncIndex(t *testing.T) {
 	testFunction(t, testFunctionConfig{
+		Vars: map[string]ast.Variable{
+			"var.list1": interfaceToVariableSwallowError([]string{"notfoo", "stillnotfoo", "bar"}),
+			"var.list2": interfaceToVariableSwallowError([]string{"foo"}),
+			"var.list3": interfaceToVariableSwallowError([]string{"foo", "spam", "bar", "eggs"}),
+		},
 		Cases: []testFunctionCase{
 			{
 				`${index("test", "")}`,
@@ -379,22 +395,19 @@ func TestInterpolateFuncIndex(t *testing.T) {
 			},
 
 			{
-				fmt.Sprintf(`${index("%s", "foo")}`,
-					NewStringList([]string{"notfoo", "stillnotfoo", "bar"}).String()),
+				`${index(var.list1, "foo")}`,
 				nil,
 				true,
 			},
 
 			{
-				fmt.Sprintf(`${index("%s", "foo")}`,
-					NewStringList([]string{"foo"}).String()),
+				`${index(var.list2, "foo")}`,
 				"0",
 				false,
 			},
 
 			{
-				fmt.Sprintf(`${index("%s", "bar")}`,
-					NewStringList([]string{"foo", "spam", "bar", "eggs"}).String()),
+				`${index(var.list3, "bar")}`,
 				"2",
 				false,
 			},
@@ -404,6 +417,10 @@ func TestInterpolateFuncIndex(t *testing.T) {
 
 func TestInterpolateFuncJoin(t *testing.T) {
 	testFunction(t, testFunctionConfig{
+		Vars: map[string]ast.Variable{
+			"var.a_list":        interfaceToVariableSwallowError([]string{"foo"}),
+			"var.a_longer_list": interfaceToVariableSwallowError([]string{"foo", "bar", "baz"}),
+		},
 		Cases: []testFunctionCase{
 			{
 				`${join(",")}`,
@@ -412,24 +429,13 @@ func TestInterpolateFuncJoin(t *testing.T) {
 			},
 
 			{
-				fmt.Sprintf(`${join(",", "%s")}`,
-					NewStringList([]string{"foo"}).String()),
+				`${join(",", var.a_list)}`,
 				"foo",
 				false,
 			},
 
-			/*
-				TODO
-				{
-					`${join(",", "foo", "bar")}`,
-					"foo,bar",
-					false,
-				},
-			*/
-
 			{
-				fmt.Sprintf(`${join(".", "%s")}`,
-					NewStringList([]string{"foo", "bar", "baz"}).String()),
+				`${join(".", var.a_longer_list)}`,
 				"foo.bar.baz",
 				false,
 			},
@@ -448,6 +454,22 @@ func TestInterpolateFuncJSONEncode(t *testing.T) {
 				Value: " foo \\ \n \t \" bar ",
 				Type:  ast.TypeString,
 			},
+			"list": interfaceToVariableSwallowError([]string{"foo", "bar\tbaz"}),
+			// XXX can't use InterfaceToVariable as it converts empty slice into empty
+			// map.
+			"emptylist": ast.Variable{
+				Value: []ast.Variable{},
+				Type:  ast.TypeList,
+			},
+			"map": interfaceToVariableSwallowError(map[string]string{
+				"foo":     "bar",
+				"ba \n z": "q\\x",
+			}),
+			"emptymap": interfaceToVariableSwallowError(map[string]string{}),
+
+			// Not yet supported (but it would be nice)
+			"nestedlist": interfaceToVariableSwallowError([][]string{{"foo"}}),
+			"nestedmap":  interfaceToVariableSwallowError(map[string][]string{"foo": {"bar"}}),
 		},
 		Cases: []testFunctionCase{
 			{
@@ -472,6 +494,36 @@ func TestInterpolateFuncJSONEncode(t *testing.T) {
 			},
 			{
 				`${jsonencode()}`,
+				nil,
+				true,
+			},
+			{
+				`${jsonencode(list)}`,
+				`["foo","bar\tbaz"]`,
+				false,
+			},
+			{
+				`${jsonencode(emptylist)}`,
+				`[]`,
+				false,
+			},
+			{
+				`${jsonencode(map)}`,
+				`{"ba \n z":"q\\x","foo":"bar"}`,
+				false,
+			},
+			{
+				`${jsonencode(emptymap)}`,
+				`{}`,
+				false,
+			},
+			{
+				`${jsonencode(nestedlist)}`,
+				nil,
+				true,
+			},
+			{
+				`${jsonencode(nestedmap)}`,
 				nil,
 				true,
 			},
@@ -621,6 +673,40 @@ func TestInterpolateFuncSignum(t *testing.T) {
 	})
 }
 
+func TestInterpolateFuncSort(t *testing.T) {
+	testFunction(t, testFunctionConfig{
+		Vars: map[string]ast.Variable{
+			"var.strings": ast.Variable{
+				Type: ast.TypeList,
+				Value: []ast.Variable{
+					{Type: ast.TypeString, Value: "c"},
+					{Type: ast.TypeString, Value: "a"},
+					{Type: ast.TypeString, Value: "b"},
+				},
+			},
+			"var.notstrings": ast.Variable{
+				Type: ast.TypeList,
+				Value: []ast.Variable{
+					{Type: ast.TypeList, Value: []ast.Variable{}},
+					{Type: ast.TypeString, Value: "b"},
+				},
+			},
+		},
+		Cases: []testFunctionCase{
+			{
+				`${sort(var.strings)}`,
+				[]interface{}{"a", "b", "c"},
+				false,
+			},
+			{
+				`${sort(var.notstrings)}`,
+				nil,
+				true,
+			},
+		},
+	})
+}
+
 func TestInterpolateFuncSplit(t *testing.T) {
 	testFunction(t, testFunctionConfig{
 		Cases: []testFunctionCase{
@@ -632,37 +718,37 @@ func TestInterpolateFuncSplit(t *testing.T) {
 
 			{
 				`${split(",", "")}`,
-				NewStringList([]string{""}).String(),
+				[]interface{}{""},
 				false,
 			},
 
 			{
 				`${split(",", "foo")}`,
-				NewStringList([]string{"foo"}).String(),
+				[]interface{}{"foo"},
 				false,
 			},
 
 			{
 				`${split(",", ",,,")}`,
-				NewStringList([]string{"", "", "", ""}).String(),
+				[]interface{}{"", "", "", ""},
 				false,
 			},
 
 			{
 				`${split(",", "foo,")}`,
-				NewStringList([]string{"foo", ""}).String(),
+				[]interface{}{"foo", ""},
 				false,
 			},
 
 			{
 				`${split(",", ",foo,")}`,
-				NewStringList([]string{"", "foo", ""}).String(),
+				[]interface{}{"", "foo", ""},
 				false,
 			},
 
 			{
 				`${split(".", "foo.bar.baz")}`,
-				NewStringList([]string{"foo", "bar", "baz"}).String(),
+				[]interface{}{"foo", "bar", "baz"},
 				false,
 			},
 		},
@@ -672,30 +758,56 @@ func TestInterpolateFuncSplit(t *testing.T) {
 func TestInterpolateFuncLookup(t *testing.T) {
 	testFunction(t, testFunctionConfig{
 		Vars: map[string]ast.Variable{
-			"var.foo.bar": ast.Variable{
-				Value: "baz",
-				Type:  ast.TypeString,
+			"var.foo": ast.Variable{
+				Type: ast.TypeMap,
+				Value: map[string]ast.Variable{
+					"bar": ast.Variable{
+						Type:  ast.TypeString,
+						Value: "baz",
+					},
+				},
 			},
 		},
 		Cases: []testFunctionCase{
 			{
-				`${lookup("foo", "bar")}`,
+				`${lookup(var.foo, "bar")}`,
 				"baz",
 				false,
 			},
 
 			// Invalid key
 			{
-				`${lookup("foo", "baz")}`,
+				`${lookup(var.foo, "baz")}`,
 				nil,
 				true,
 			},
 
+			// Supplied default with valid key
+			{
+				`${lookup(var.foo, "bar", "")}`,
+				"baz",
+				false,
+			},
+
+			// Supplied default with invalid key
+			{
+				`${lookup(var.foo, "zip", "")}`,
+				"",
+				false,
+			},
+
 			// Too many args
 			{
-				`${lookup("foo", "bar", "baz")}`,
+				`${lookup(var.foo, "bar", "", "abc")}`,
 				nil,
 				true,
+			},
+
+			// Non-empty default
+			{
+				`${lookup(var.foo, "zap", "xyz")}`,
+				"xyz",
+				false,
 			},
 		},
 	})
@@ -704,13 +816,18 @@ func TestInterpolateFuncLookup(t *testing.T) {
 func TestInterpolateFuncKeys(t *testing.T) {
 	testFunction(t, testFunctionConfig{
 		Vars: map[string]ast.Variable{
-			"var.foo.bar": ast.Variable{
-				Value: "baz",
-				Type:  ast.TypeString,
-			},
-			"var.foo.qux": ast.Variable{
-				Value: "quack",
-				Type:  ast.TypeString,
+			"var.foo": ast.Variable{
+				Type: ast.TypeMap,
+				Value: map[string]ast.Variable{
+					"bar": ast.Variable{
+						Value: "baz",
+						Type:  ast.TypeString,
+					},
+					"qux": ast.Variable{
+						Value: "quack",
+						Type:  ast.TypeString,
+					},
+				},
 			},
 			"var.str": ast.Variable{
 				Value: "astring",
@@ -719,28 +836,28 @@ func TestInterpolateFuncKeys(t *testing.T) {
 		},
 		Cases: []testFunctionCase{
 			{
-				`${keys("foo")}`,
-				NewStringList([]string{"bar", "qux"}).String(),
+				`${keys(var.foo)}`,
+				[]interface{}{"bar", "qux"},
 				false,
 			},
 
 			// Invalid key
 			{
-				`${keys("not")}`,
+				`${keys(var.not)}`,
 				nil,
 				true,
 			},
 
 			// Too many args
 			{
-				`${keys("foo", "bar")}`,
+				`${keys(var.foo, "bar")}`,
 				nil,
 				true,
 			},
 
 			// Not a map
 			{
-				`${keys("str")}`,
+				`${keys(var.str)}`,
 				nil,
 				true,
 			},
@@ -751,13 +868,18 @@ func TestInterpolateFuncKeys(t *testing.T) {
 func TestInterpolateFuncValues(t *testing.T) {
 	testFunction(t, testFunctionConfig{
 		Vars: map[string]ast.Variable{
-			"var.foo.bar": ast.Variable{
-				Value: "quack",
-				Type:  ast.TypeString,
-			},
-			"var.foo.qux": ast.Variable{
-				Value: "baz",
-				Type:  ast.TypeString,
+			"var.foo": ast.Variable{
+				Type: ast.TypeMap,
+				Value: map[string]ast.Variable{
+					"bar": ast.Variable{
+						Value: "quack",
+						Type:  ast.TypeString,
+					},
+					"qux": ast.Variable{
+						Value: "baz",
+						Type:  ast.TypeString,
+					},
+				},
 			},
 			"var.str": ast.Variable{
 				Value: "astring",
@@ -766,28 +888,28 @@ func TestInterpolateFuncValues(t *testing.T) {
 		},
 		Cases: []testFunctionCase{
 			{
-				`${values("foo")}`,
-				NewStringList([]string{"quack", "baz"}).String(),
+				`${values(var.foo)}`,
+				[]interface{}{"quack", "baz"},
 				false,
 			},
 
 			// Invalid key
 			{
-				`${values("not")}`,
+				`${values(var.not)}`,
 				nil,
 				true,
 			},
 
 			// Too many args
 			{
-				`${values("foo", "bar")}`,
+				`${values(var.foo, "bar")}`,
 				nil,
 				true,
 			},
 
 			// Not a map
 			{
-				`${values("str")}`,
+				`${values(var.str)}`,
 				nil,
 				true,
 			},
@@ -795,43 +917,47 @@ func TestInterpolateFuncValues(t *testing.T) {
 	})
 }
 
+func interfaceToVariableSwallowError(input interface{}) ast.Variable {
+	variable, _ := hil.InterfaceToVariable(input)
+	return variable
+}
+
 func TestInterpolateFuncElement(t *testing.T) {
 	testFunction(t, testFunctionConfig{
+		Vars: map[string]ast.Variable{
+			"var.a_list":       interfaceToVariableSwallowError([]string{"foo", "baz"}),
+			"var.a_short_list": interfaceToVariableSwallowError([]string{"foo"}),
+		},
 		Cases: []testFunctionCase{
 			{
-				fmt.Sprintf(`${element("%s", "1")}`,
-					NewStringList([]string{"foo", "baz"}).String()),
+				`${element(var.a_list, "1")}`,
 				"baz",
 				false,
 			},
 
 			{
-				fmt.Sprintf(`${element("%s", "0")}`,
-					NewStringList([]string{"foo"}).String()),
+				`${element(var.a_short_list, "0")}`,
 				"foo",
 				false,
 			},
 
 			// Invalid index should wrap vs. out-of-bounds
 			{
-				fmt.Sprintf(`${element("%s", "2")}`,
-					NewStringList([]string{"foo", "baz"}).String()),
+				`${element(var.a_list, "2")}`,
 				"foo",
 				false,
 			},
 
 			// Negative number should fail
 			{
-				fmt.Sprintf(`${element("%s", "-1")}`,
-					NewStringList([]string{"foo"}).String()),
+				`${element(var.a_short_list, "-1")}`,
 				nil,
 				true,
 			},
 
 			// Too many args
 			{
-				fmt.Sprintf(`${element("%s", "0", "2")}`,
-					NewStringList([]string{"foo", "baz"}).String()),
+				`${element(var.a_list, "0", "2")}`,
 				nil,
 				true,
 			},

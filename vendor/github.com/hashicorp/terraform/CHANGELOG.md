@@ -1,3 +1,145 @@
+## 0.7 (Unreleased)
+
+BACKWARDS INCOMPATIBILITIES / NOTES:
+
+ * Terraform's built-in plugins are now distributed as part of the main Terraform binary, and use the go-plugin framework. Overrides are still available using separate binaries, but will need recompiling against Terraform 0.7.
+ * The `terraform plan` command no longer persists state. This makes the command much safer to run, since it is now side-effect free. The `refresh` and `apply` commands still persist state to local and remote storage. Any automation that assumes that `terraform plan` persists state will need to be reworked to explicitly call `terraform refresh` to get the equivalent side-effect. (The `terraform plan` command no longer has the `-state-out` or `-backup` flags due to this change.)
+ * The `concat()` interpolation function can no longer be used to join strings.
+ * `openstack_networking_subnet_v2` now defaults to turning DHCP on.
+ * `aws_elb` now defaults `cross_zone_load_balancing` to `true`
+ * `resource_aws_instance`: EC2 Classic users may continue to use
+   `security_groups` to reference Security Groups by their `name`. Users who are
+   managing Instances inside VPCs will need to use `vpc_security_group_ids` instead, 
+   and reference the security groups by their `id`. 
+   Ref https://github.com/hashicorp/terraform/issues/6416#issuecomment-219145065
+ * Lists materialized using splat syntax, for example `aws_instance.foo.*.id` are now ordered by the count index rather than lexographically sorted. If this produces a large number of undesirable differences, you can use the new `sort()` interpolation function to produce the previous behaviour.
+ * `aws_route53_record`: `latency_routing_policy`, `geolocation_routing_policy`, and `failover_routing_policy` block options have been added. With these additions we’ve renamed the `weight` attribute to `weighted_routing_policy`, and it has changed from a string to a block to match the others. Please see the updated documentation on using `weighted_routing_policy`:  https://www.terraform.io/docs/providers/aws/r/route53_record.html . [GH-6954]
+ * You now access the values of maps using the syntax `var.map["key"]` or the `lookup` function instead of `var.map.key`.
+ * Outputs on `terraform_remote_state` resources are now top level attributes rather than inside the `output` map. In order to access outputs, use the syntax: `terraform_remote_state.name.outputname`. Currently outputs cannot be named `config` or `backend`.
+ * `azurerm_dns_cname_record` now accepts a single record rather than a list of records
+ * `aws_db_instance` now defaults `publicly_accessible` to false
+
+FEATURES:
+
+ * **Data sources** are a new kind of primitive in Terraform. Attributes for data sources are refreshed and available during the planning stage. [GH-6598]
+ * **Lists and maps** can now be used as first class types for variables and may also be passed between modules. [GH-6322]
+ * **State management CLI commands** provide a variety of state manipulation functions for advanced use cases. This should be used where possible instead of manually modifying state files. [GH-5811]
+ 
+ * **New Command:** `terraform state` to provide access to a variety of state manipulation functions [GH-5811]
+ * **New Data Source:** `aws_ami` [GH-6911]
+ * **New Data Source:** `aws_availability_zones` [GH-6805]
+ * **New Data Source:** `aws_iam_policy_document` [GH-6881]
+ * **New Data Source:** `aws_s3_bucket_object` [GH-6946]
+ * **New Interpolation Function:** `sort` [GH-7128]
+ * **New Provider:** `grafana` [GH-6206]
+ * **New Provider:** `random` - allows generation of random values without constantly generating diffs [GH-6672]
+ * **New Remote State Provider:** - `gcs` - Google Cloud Storage [GH-6814]
+ * **New Remote State Provider:** - `azure` - Microsoft Azure Storage [GH-7064]
+ * **New Resource:** `aws_elb_attachment` [GH-6879]
+ * **New Resource:** `aws_elastictranscoder_preset` [GH-6965]
+ * **New Resource:** `aws_elastictranscoder_pipeline` [GH-6965]
+ * **New Resource:** `aws_iam_group_policy_attachment` [GH-6858]
+ * **New Resource:** `aws_iam_role_policy_attachment` [GH-6858]
+ * **New Resource:** `aws_iam_user_policy_attachment` [GH-6858]
+ * **New Resource:** `aws_rds_cluster_parameter_group` [GH-5269]
+ * **New Resource:** `openstack_blockstorage_volume_v2` [GH-6693]
+ * **New Resource:** `openstack_lb_loadbalancer_v2` [GH-7012]
+ * **New Resource:** `openstack_lb_listener_v2` [GH-7012]
+ * **New Resource:** `openstack_lb_pool_v2` [GH-7012]
+ * **New Resource:** `openstack_lb_member_v2` [GH-7012]
+ * **New Resource:** `openstack_lb_monitor_v2` [GH-7012]
+ * **New Resource:** `vsphere_virtual_disk` [GH-6273]
+ * **New Resource:** `github_repository_collaborator` [GH-6861]
+ * **New Resource:** `azurerm_virtual_machine_scale_set` [GH-6711]
+ * core: Tainted resources now show up in the plan and respect dependency ordering [GH-6600]
+ * core: The `lookup` interpolation function can now have a default fall-back value specified [GH-6884]
+ * core: The `terraform plan` command no longer persists state. [GH-6811]
+
+IMPROVEMENTS:
+
+ * core: The `jsonencode` interpolation function now supports encoding lists and maps [GH-6749]
+ * core: Add the ability for resource definitions to mark attributes as "sensitive" which will omit them from UI output. [GH-6923]
+ * provider/aws: Add `option_settings` to `aws_db_option_group` [GH-6560]
+ * provider/aws: Add more explicit support for Skipping Final Snapshot in RDS Cluster [GH-6795]
+ * provider/aws: Add support for S3 Bucket Acceleration [GH-6628]
+ * provider/aws: Add support for `kms_key_id` to `aws_db_instance` [GH-6651]
+ * provider/aws: Add support to `aws_redshift_cluster` for `iam_roles` [GH-6647]
+ * provider/aws: SQS use raw policy string if compact fails [GH-6724]
+ * provider/aws: Set default description to "Managed by Terraform" [GH-6104]
+ * provider/aws: Support for Redshift Cluster encryption using a KMS key [GH-6712]
+ * provider/aws: Support tags for AWS redshift cluster [GH-5356]
+ * provider/aws: Add `iam_arn` to aws_cloudfront_origin_access_identity [GH-6955]
+ * provider/aws: Add `cross_zone_load_balancing` on `aws_elb` default to true [GH-6897]
+ * provider/aws: Add support for `character_set_name` to `aws_db_instance` [GH-4861]
+ * provider/aws: Add support for DB parameter group with RDS Cluster Instances (Aurora) [GH-6865]
+ * provider/aws: Add `name_prefix` to `aws_iam_instance_profile` and `aws_iam_role` [GH-6939]
+ * provider/aws: Rename parameter_group_name to db_cluster_parameter_group_name [GH-7083]
+ * provider/azurerm: Add support for EnableIPForwarding to `azurerm_network_interface` [GH-6807]
+ * provider/azurerm: Add support for exporting the `azurerm_storage_account` access keys [GH-6742]
+ * provider/azurerm: The Azure SDK now exposes better error messages [GH-6976]
+ * provider/clc: Add support for hyperscale and bareMetal server types and package installation
+ * provider/clc: Fix optional server password [GH-6414]
+ * provider/cloudstack: Add support for affinity groups to `cloudstack_instance` [GH-6898]
+ * provider/cloudstack: Enable swapping of ACLs without having to rebuild the network tier [GH-6741]
+ * provider/datadog: Add support for 'require full window' and 'locked' [GH-6738]
+ * provider/fastly: Add support for Cache Settings [GH-6781]
+ * provider/fastly: Add support for Service Request Settings on `fastly_service_v1` resources [GH-6622]
+ * provider/fastly: Add support for custom VCL configuration [GH-6662]
+ * provider/google: Support optional uuid naming for Instance Template [GH-6604]
+ * provider/openstack: Add support for client certificate authentication [GH-6279]
+ * provider/openstack: Allow Neutron-based Floating IP to target a specific tenant [GH-6454] 
+ * provider/openstack: Enable DHCP By Default [GH-6838]
+ * provider/openstack: Implement fixed_ip on Neutron floating ip allocations [GH-6837] 
+ * provider/openstack: Increase timeouts for image resize, subnets, and routers [GH-6764]
+ * provider/openstack: Add `lb_provider` argument to `lb_pool_v1` resource [GH-6919]
+ * provider/openstack: Enforce `ForceNew` on Instance Block Device [GH-6921]
+ * provider/vsphere: Add support for `controller_type` to `vsphere_virtual_machine` [GH-6785]
+ * provider/vsphere: Fix bug with `vsphere_virtual_machine` wait for ip [GH-6377]
+ * provider/vsphere: Virtual machine update disk [GH-6619]
+ * provider/vsphere: `vsphere_virtual_machine` adding controller creation logic [GH-6853]
+ * provider/vsphere: `vsphere_virtual_machine` added support for `mac address` on `network_interface` [GH-6966]
+ * provider/vsphere: Enhanced `vsphere` logging capabilities [GH-6893]
+ * provider/vSphere: Add DiskEnableUUID option to `vsphere_virtual_machine` [GH-7088]
+ 
+BUG FIXES:
+
+ * core: Correct the previous fix for a bug causing "attribute not found" messages during destroy, as it was insufficient [GH-6599]
+ * core: Fix issue causing syntax errors interpolating count attribute when value passed between modules [GH-6833]
+ * provider/aws: Fix crash in `aws_elasticache_parameter_group` occuring following edits in the console [GH-6687]
+ * provider/aws: Trim trailing `.` from `name` in `aws_route53_record` resources to prevent spurious diffs [GH-6592]
+ * provider/aws: Updating state when `aws_sns_topic_subscription` is missing [GH-6629]
+ * provider/aws: `aws_codedeploy_deployment_group` panic when setting `on_premises_instance_tag_filter` [GH-6617]
+ * provider/aws: `aws_opsworks_application.app_source` SSH key is write-only [GH-6649]
+ * provider/aws: fix Elastic Beanstalk `cname_prefix` continual plans [GH-6653]
+ * provider/aws: fix aws_security_group_rule refresh [GH-6730]
+ * provider/aws: If more ENIs are attached to `aws_instance`, the one w/ DeviceIndex `0` is always used in context of `aws_instance` (previously unpredictable) [GH-6761]
+ * provider/aws: Fix issue with Root Block Devices and encrypted flag in Launch Configurations [GH-6512]
+ * provider/aws: Mark Lambda function as gone when it's gone [GH-6924]
+ * provider/aws: Make 'stage_name' required in api_gateway_deployment [Gh-6797]
+ * provider/aws: Changing keys in `aws_dynamodb_table` correctly force new resources [GH-6829]
+ * provider/aws: Fix issue reattaching a VPN gateway to a VPC [GH-6987]
+ * provider/aws: Update Lambda functions on name change [GH-7081]
+ * provider/aws: `aws_db_instance` now defaults `publicly_accessible` to false [GH-7117]
+ * provider/azurerm: Fixes terraform crash when using SSH keys with `azurerm_virtual_machine` [GH-6766]
+ * provider/azurerm: Fix a bug causing 'diffs do not match' on `azurerm_network_interface` resources [GH-6790]
+ * provider/azurerm: Normalizes `availability_set_id` casing to avoid spurious diffs in `azurerm_virtual_machine` [GH-6768]
+ * provider/azurerm: Add support for storage container name validation [GH-6852]
+ * provider/azurerm: Remove storage containers and blobs when storage accounts are not found [GH-6855]
+ * provider/azurerm: `azurerm_virtual_machine` fix `additional_unattend_rm` Windows config option [GH-7105]
+ * provider/azurerm: Fix `azurerm_virtual_machine` windows_config [GH-7123]
+ * provider/azurerm: `azurerm_dns_cname_record` can create CNAME records again [GH-7113]
+ * provider/cloudflare: Fix issue upgrading CloudFlare Records created before v0.6.15 [GH-6969]
+ * provider/cloudstack: Fix using `cloudstack_network_acl` within a project [GH-6743]
+ * provider/digitalocean: Stop `digitocean_droplet` forcing new resource on uppercase region [GH-7044]
+ * provider/google: Fix a bug causing an error attempting to delete an already-deleted `google_compute_disk` [GH-6689]
+ * provider/openstack: Reassociate Floating IP on network changes [GH-6579]
+ * provider/openstack: Ensure CIDRs Are Lower Case [GH-6864]
+ * provider/openstack: Rebuild Instances On Network Changes [GH-6844]
+ * provider/vsphere: `gateway` and `ipv6_gateway` are now read from `vsphere_virtual_machine` resources [GH-6522]
+ * provider/vsphere: `ipv*_gateway` parameters won't force a new `vsphere_virtual_machine` [GH-6635]
+ * provider/vsphere: adding a `vsphere_virtual_machine` migration [GH-7023]
+ * provider/vsphere: Don't require vsphere debug paths to be set [GH-7027]
+
 ## 0.6.16 (May 9, 2016)
 
 BACKWARDS INCOMPATIBILITIES / NOTES:
@@ -21,6 +163,7 @@ FEATURES:
 IMPROVEMENTS:
 
  * core: update HCL dependency to improve whitespace handling in `terraform fmt` ([#6347](https://github.com/hashicorp/terraform/issues/6347))
+ * core: Add support for marking outputs as sensitive ([#6559](https://github.com/hashicorp/terraform/issues/6559))
  * provider/aws: Add agent_version argument to `aws_opswork_stack` ([#6493](https://github.com/hashicorp/terraform/issues/6493)) 
  * provider/aws: Add support for request parameters to `api_gateway_method` & `api_gateway_integration` ([#6501](https://github.com/hashicorp/terraform/issues/6501))
  * provider/aws: Add support for response parameters to `api_gateway_method_response` & `api_gateway_integration_response` ([#6344](https://github.com/hashicorp/terraform/issues/6344))
@@ -79,6 +222,9 @@ BUG FIXES:
  * provider/vsphere: Memory reservations are now set correctly in `vsphere_virtual_machine` resources ([#6482](https://github.com/hashicorp/terraform/issues/6482))
 
 ## 0.6.15 (April 22, 2016)
+
+BACKWARDS INCOMPATIBILITIES / NOTES:
+ * `aws_instance` - if you still use `security_groups` field for SG IDs - i.e. inside VPC, this will generate diffs during `plan` and `apply` will **recreate** the resource. Terraform expects IDs (VPC SGs) inside `vpc_security_group_ids`.
 
 FEATURES:
 
@@ -277,7 +423,6 @@ IMPROVEMENTS:
   * provider/aws: Support KMS encryption of S3 objects ([#5453](https://github.com/hashicorp/terraform/issues/5453))
   * provider/aws: `aws_autoscaling_lifecycle_hook` now have `notification_target_arn` and `role_arn` as optional ([#5616](https://github.com/hashicorp/terraform/issues/5616))
   * provider/aws: `aws_ecs_service` validates number of `load_balancer`s before creation/updates ([#5605](https://github.com/hashicorp/terraform/issues/5605))
-  * provider/aws: `aws_instance` now allows changes to security groups without force new resource ([#5193](https://github.com/hashicorp/terraform/issues/5193))
   * provider/aws: send Terraform version in User-Agent ([#5621](https://github.com/hashicorp/terraform/issues/5621))
   * provider/cloudflare: Change `cloudflare_record` type to ForceNew ([#5353](https://github.com/hashicorp/terraform/issues/5353))
   * provider/consul: `consul_keys` now detects drift and supports deletion of individual `key` blocks ([#5210](https://github.com/hashicorp/terraform/issues/5210))

@@ -2196,6 +2196,26 @@ func ExampleEC2_DescribeIdFormat() {
 	fmt.Println(resp)
 }
 
+func ExampleEC2_DescribeIdentityIdFormat() {
+	svc := ec2.New(session.New())
+
+	params := &ec2.DescribeIdentityIdFormatInput{
+		PrincipalArn: aws.String("String"), // Required
+		Resource:     aws.String("String"),
+	}
+	resp, err := svc.DescribeIdentityIdFormat(params)
+
+	if err != nil {
+		// Print the error, cast err to awserr.Error to get the Code and
+		// Message from an error.
+		fmt.Println(err.Error())
+		return
+	}
+
+	// Pretty-print the response data.
+	fmt.Println(resp)
+}
+
 func ExampleEC2_DescribeImageAttribute() {
 	svc := ec2.New(session.New())
 
@@ -3003,6 +3023,29 @@ func ExampleEC2_DescribeScheduledInstances() {
 	fmt.Println(resp)
 }
 
+func ExampleEC2_DescribeSecurityGroupReferences() {
+	svc := ec2.New(session.New())
+
+	params := &ec2.DescribeSecurityGroupReferencesInput{
+		GroupId: []*string{ // Required
+			aws.String("String"), // Required
+			// More values...
+		},
+		DryRun: aws.Bool(true),
+	}
+	resp, err := svc.DescribeSecurityGroupReferences(params)
+
+	if err != nil {
+		// Print the error, cast err to awserr.Error to get the Code and
+		// Message from an error.
+		fmt.Println(err.Error())
+		return
+	}
+
+	// Pretty-print the response data.
+	fmt.Println(resp)
+}
+
 func ExampleEC2_DescribeSecurityGroups() {
 	svc := ec2.New(session.New())
 
@@ -3257,6 +3300,28 @@ func ExampleEC2_DescribeSpotPriceHistory() {
 		StartTime: aws.Time(time.Now()),
 	}
 	resp, err := svc.DescribeSpotPriceHistory(params)
+
+	if err != nil {
+		// Print the error, cast err to awserr.Error to get the Code and
+		// Message from an error.
+		fmt.Println(err.Error())
+		return
+	}
+
+	// Pretty-print the response data.
+	fmt.Println(resp)
+}
+
+func ExampleEC2_DescribeStaleSecurityGroups() {
+	svc := ec2.New(session.New())
+
+	params := &ec2.DescribeStaleSecurityGroupsInput{
+		VpcId:      aws.String("String"), // Required
+		DryRun:     aws.Bool(true),
+		MaxResults: aws.Int64(1),
+		NextToken:  aws.String("NextToken"),
+	}
+	resp, err := svc.DescribeStaleSecurityGroups(params)
 
 	if err != nil {
 		// Print the error, cast err to awserr.Error to get the Code and
@@ -3996,6 +4061,27 @@ func ExampleEC2_GetConsoleOutput() {
 	fmt.Println(resp)
 }
 
+func ExampleEC2_GetConsoleScreenshot() {
+	svc := ec2.New(session.New())
+
+	params := &ec2.GetConsoleScreenshotInput{
+		InstanceId: aws.String("String"), // Required
+		DryRun:     aws.Bool(true),
+		WakeUp:     aws.Bool(true),
+	}
+	resp, err := svc.GetConsoleScreenshot(params)
+
+	if err != nil {
+		// Print the error, cast err to awserr.Error to get the Code and
+		// Message from an error.
+		fmt.Println(err.Error())
+		return
+	}
+
+	// Pretty-print the response data.
+	fmt.Println(resp)
+}
+
 func ExampleEC2_GetPasswordData() {
 	svc := ec2.New(session.New())
 
@@ -4242,6 +4328,27 @@ func ExampleEC2_ModifyIdFormat() {
 		UseLongIds: aws.Bool(true),       // Required
 	}
 	resp, err := svc.ModifyIdFormat(params)
+
+	if err != nil {
+		// Print the error, cast err to awserr.Error to get the Code and
+		// Message from an error.
+		fmt.Println(err.Error())
+		return
+	}
+
+	// Pretty-print the response data.
+	fmt.Println(resp)
+}
+
+func ExampleEC2_ModifyIdentityIdFormat() {
+	svc := ec2.New(session.New())
+
+	params := &ec2.ModifyIdentityIdFormatInput{
+		PrincipalArn: aws.String("String"), // Required
+		Resource:     aws.String("String"), // Required
+		UseLongIds:   aws.Bool(true),       // Required
+	}
+	resp, err := svc.ModifyIdentityIdFormat(params)
 
 	if err != nil {
 		// Print the error, cast err to awserr.Error to get the Code and
@@ -5098,9 +5205,11 @@ func ExampleEC2_RequestSpotFleet() {
 			AllocationStrategy:               aws.String("AllocationStrategy"),
 			ClientToken:                      aws.String("String"),
 			ExcessCapacityTerminationPolicy:  aws.String("ExcessCapacityTerminationPolicy"),
+			FulfilledCapacity:                aws.Float64(1.0),
 			TerminateInstancesWithExpiration: aws.Bool(true),
-			ValidFrom:                        aws.Time(time.Now()),
-			ValidUntil:                       aws.Time(time.Now()),
+			Type:       aws.String("FleetType"),
+			ValidFrom:  aws.Time(time.Now()),
+			ValidUntil: aws.Time(time.Now()),
 		},
 		DryRun: aws.Bool(true),
 	}
