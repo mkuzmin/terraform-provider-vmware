@@ -27,8 +27,8 @@ func Provider() terraform.ResourceProvider {
 			},
 			"insecure_connection": &schema.Schema{
 				Type:        schema.TypeBool,
-                Optional: true,
-                Default: false,
+				Optional:    true,
+				Default:     false,
 				Description: "Do not check vCenter SSL certificate",
 			},
 		},
@@ -43,8 +43,8 @@ func Provider() terraform.ResourceProvider {
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	config := Config{
-		vCenter: d.Get("vcenter_server").(string),
-		User: d.Get("user").(string),
+		vCenter:  d.Get("vcenter_server").(string),
+		User:     d.Get("user").(string),
 		Password: d.Get("password").(string),
 		Insecure: d.Get("insecure_connection").(bool),
 	}
