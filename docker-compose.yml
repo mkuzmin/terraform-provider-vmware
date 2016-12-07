@@ -1,6 +1,6 @@
 version: '2'
 services:
-  go:
+  build:
     build:
       context: docker/
     volumes:

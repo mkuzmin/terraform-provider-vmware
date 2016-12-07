@@ -1,14 +1,9 @@
 #!/bin/sh -eux
 
-VERSION=0.7-dev
+VERSION=1.0-dev
 
 glide install -v
 
-rm -rf bin
-GOOS=darwin  GOARCH=amd64 go build -o bin/macos/terraform-provider-vmware
-GOOS=linux   GOARCH=amd64 go build -o bin/linux/terraform-provider-vmware
-GOOS=windows GOARCH=amd64 go build -o bin/windows/terraform-provider-vmware.exe
-
-tar czf bin/terraform-vsphere-$VERSION-macos.tar.gz  --directory=bin/macos terraform-provider-vmware
-tar czf bin/terraform-vsphere-$VERSION-linux.tar.gz  --directory=bin/linux terraform-provider-vmware
-zip     bin/terraform-vsphere-$VERSION-windows.zip   -j bin/windows/terraform-provider-vmware.exe
+GOOS=darwin  GOARCH=amd64 go build -o bin/terraform-provider-vmware_macos_x64
+GOOS=linux   GOARCH=amd64 go build -o bin/terraform-provider-vmware_linux_x64
+GOOS=windows GOARCH=amd64 go build -o bin/terraform-provider-vmware.exe_windows_x64
