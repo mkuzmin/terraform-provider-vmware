@@ -2,6 +2,8 @@
 
 VERSION=0.7-dev
 
+glide install -v
+
 rm -rf bin
 GOOS=darwin  GOARCH=amd64 go build -o bin/macos/terraform-provider-vmware
 GOOS=linux   GOARCH=amd64 go build -o bin/linux/terraform-provider-vmware
