@@ -1,5 +1,6 @@
 .idea/
 *.iml
+vendor/
 terraform-provider-vmware
 terraform-provider-vmware.exe
 terraform-vsphere
