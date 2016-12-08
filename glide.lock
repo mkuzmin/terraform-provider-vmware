@@ -1,112 +1,122 @@
-hash: 2c6cd9b655bc6311a975d67e97666ae3aee04a30923dad8e3d1382321204fbd4
-updated: 2016-06-26T15:14:15.081915558+03:00
+hash: e0d886da2f706d505a8dd4c4ce36b66073a5e530abc563a323210d81da8f5877
+updated: 2016-12-08T02:54:32.776461741+03:00
 imports:
 - name: github.com/apparentlymart/go-cidr
   version: a3ebdb999b831ecb6ab8a226e31b07b2b9061c47
   subpackages:
   - cidr
 - name: github.com/aws/aws-sdk-go
-  version: b85eaebe3c12e8db01a7c26882457c5c51100471
+  version: bce382c6d2a7bf676449d02b556a733e11df0c1c
   subpackages:
   - aws
-  - aws/credentials
-  - aws/credentials/ec2rolecreds
-  - aws/ec2metadata
-  - aws/session
-  - service/s3
   - aws/awserr
+  - aws/awsutil
   - aws/client
   - aws/client/metadata
-  - aws/request
   - aws/corehandlers
+  - aws/credentials
+  - aws/credentials/ec2rolecreds
+  - aws/credentials/endpointcreds
+  - aws/credentials/stscreds
   - aws/defaults
-  - private/endpoints
-  - aws/awsutil
+  - aws/ec2metadata
+  - aws/endpoints
+  - aws/request
+  - aws/session
   - aws/signer/v4
   - private/protocol
-  - private/protocol/restxml
-  - private/waiter
-  - private/protocol/rest
   - private/protocol/query
-  - private/protocol/xml/xmlutil
   - private/protocol/query/queryutil
+  - private/protocol/rest
+  - private/protocol/restxml
+  - private/protocol/xml/xmlutil
+  - private/waiter
+  - service/s3
+  - service/sts
+- name: github.com/bgentry/go-netrc
+  version: 9fd32a8b3d3d3f9d43c341bfe098430e07609480
+  subpackages:
+  - netrc
 - name: github.com/go-ini/ini
-  version: 72ba3e6b9e6b87e0c74c9a7a4dc86e8dd8ba4355
+  version: 2ba15ac2dc9cdf88c110ec2dc0ced7fa45f5678c
 - name: github.com/hashicorp/errwrap
   version: 7554cd9344cec97297fa6649b055a8c98c2a1e55
 - name: github.com/hashicorp/go-getter
-  version: 3d6040e1c4b972f6634c5aafb08901f916c5ee3c
+  version: 2fbd997432e72fe36060c8f07ec1eaf98d098177
   subpackages:
   - helper/url
 - name: github.com/hashicorp/go-multierror
-  version: d30f09973e19c1dfcd120b2d9c4f168e68d6b5d5
+  version: 8484912a3b9987857bac52e0c5fec2b95f419628
 - name: github.com/hashicorp/go-plugin
   version: 8cf118f7a2f0c7ef1c82f66d4f6ac77c7e27dc12
 - name: github.com/hashicorp/go-uuid
-  version: 73d19cdc2bf00788cc25f7d5fd74347d48ada9ac
+  version: 64130c7a86d732268a38cb04cfbaf0cc987fda98
 - name: github.com/hashicorp/go-version
-  version: 0181db47023708a38c2d20d2fe25a5fa034d5743
+  version: e96d3840402619007766590ecea8dd7af1292276
 - name: github.com/hashicorp/hcl
-  version: 61f5143284c041681f76a5b63efcb232aaa94737
+  version: 37ab263305aaeb501a60eb16863e808d426e37f2
   subpackages:
   - hcl/ast
   - hcl/parser
-  - hcl/token
-  - json/parser
   - hcl/scanner
   - hcl/strconv
+  - hcl/token
+  - json/parser
   - json/scanner
   - json/token
 - name: github.com/hashicorp/hil
-  version: 7130f7330953adacbfb4ca0ad4b14b806bce3762
+  version: bf046eec69cc383b7f32c47990336409601c8116
   subpackages:
   - ast
+  - parser
+  - scanner
 - name: github.com/hashicorp/terraform
-  version: 46a0709bba004d8b6e0eedad411270b3ae135a9e
+  version: a6ac5bed69d95f8fc7c9bfd04072fd3a795224d0
   subpackages:
-  - helper/schema
-  - plugin
-  - terraform
-  - helper/hashcode
   - config
   - config/module
   - dag
-  - dot
   - flatmap
+  - helper/experiment
+  - helper/hashcode
   - helper/hilmapstructure
+  - helper/schema
+  - helper/shadow
+  - plugin
+  - terraform
 - name: github.com/hashicorp/yamux
-  version: badf81fca035b8ebac61b5ab83330b72541056f4
+  version: d1caa6c97c9fc1cc9e83bbe34d0603f9ff0ce8bd
 - name: github.com/jmespath/go-jmespath
-  version: 0b12d6b521d83fc7f755e7cfc1b1fbdd35a01a74
+  version: bd40a432e4c76585ef6b72d3fd96fb9b6dc7b68d
 - name: github.com/mitchellh/copystructure
-  version: ae8f8315ad044b86ced2e0be9e3598e9dd94f38e
+  version: 5af94aef99f597e6a9e1f6ac6be6ce0f3c96b49d
 - name: github.com/mitchellh/go-homedir
-  version: 756f7b183b7ab78acdbbee5c7f392838ed459dda
+  version: b8bc1bf767474819792c23f32d8286a45736f1c6
 - name: github.com/mitchellh/mapstructure
-  version: d2dd0262208475919e1a362f675cfc0e7c10e905
+  version: 5a0325d7fafaac12dda6e7fb8bd222ec1b69875e
 - name: github.com/mitchellh/reflectwalk
-  version: eecf4c70c626c7cfbb95c90195bc34d386c74ac6
+  version: 9ad27c461a633e32a235a061d523aefe8f18571d
 - name: github.com/satori/go.uuid
-  version: 879c5887cd475cd7864858769793b2ceb0d44feb
+  version: b061729afc07e77a8aa4fad0a2fd840958f1942a
 - name: github.com/vmware/govmomi
-  version: 9051bd6b44125d9472e0c148b5965692ab283d4a
+  version: ab40ac7324b5d45b8f1677d87ec0d26349448d41
   subpackages:
   - find
+  - list
   - object
   - property
-  - vim25
-  - vim25/mo
-  - vim25/types
   - session
-  - vim25/soap
-  - list
   - task
-  - vim25/methods
-  - vim25/progress
+  - vim25
   - vim25/debug
+  - vim25/methods
+  - vim25/mo
+  - vim25/progress
+  - vim25/soap
+  - vim25/types
   - vim25/xml
 - name: golang.org/x/net
-  version: bc3663df0ac92f928d419e31e0d2af22e683a5a2
+  version: 944c58e9d57bcecf171fd4bea155269aa8a96805
   subpackages:
   - context
-devImports: []
+testImports: []
