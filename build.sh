@@ -1,7 +1,5 @@
 #!/bin/sh -eux
 
-VERSION=1.0-dev
-
 glide install -v
 
 GOOS=darwin  GOARCH=amd64 go build -o bin/terraform-provider-vmware_macos_x64
