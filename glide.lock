@@ -1,12 +1,12 @@
-hash: e0d886da2f706d505a8dd4c4ce36b66073a5e530abc563a323210d81da8f5877
-updated: 2016-12-08T02:54:32.776461741+03:00
+hash: 6c0b545c10e57f49df7a582a6d0466ad3da83cf0f94fd5f12a9d9d4b2567d835
+updated: 2016-12-14T01:05:09.7142295+03:00
 imports:
 - name: github.com/apparentlymart/go-cidr
   version: a3ebdb999b831ecb6ab8a226e31b07b2b9061c47
   subpackages:
   - cidr
 - name: github.com/aws/aws-sdk-go
-  version: bce382c6d2a7bf676449d02b556a733e11df0c1c
+  version: d5fd6983e17a1644149fb634fdcf69bd03cb8b21
   subpackages:
   - aws
   - aws/awserr
@@ -65,13 +65,13 @@ imports:
   - json/scanner
   - json/token
 - name: github.com/hashicorp/hil
-  version: bf046eec69cc383b7f32c47990336409601c8116
+  version: 543808c44b249df579868afe2cc0692a02bf0478
   subpackages:
   - ast
   - parser
   - scanner
 - name: github.com/hashicorp/terraform
-  version: a6ac5bed69d95f8fc7c9bfd04072fd3a795224d0
+  version: 142dd256ad48ab17b6019fe9cd18712167fcf4b4
   subpackages:
   - config
   - config/module
@@ -93,7 +93,7 @@ imports:
 - name: github.com/mitchellh/go-homedir
   version: b8bc1bf767474819792c23f32d8286a45736f1c6
 - name: github.com/mitchellh/mapstructure
-  version: 5a0325d7fafaac12dda6e7fb8bd222ec1b69875e
+  version: bfdb1a85537d60bc7e954e600c250219ea497417
 - name: github.com/mitchellh/reflectwalk
   version: 9ad27c461a633e32a235a061d523aefe8f18571d
 - name: github.com/satori/go.uuid
@@ -116,7 +116,7 @@ imports:
   - vim25/types
   - vim25/xml
 - name: golang.org/x/net
-  version: 944c58e9d57bcecf171fd4bea155269aa8a96805
+  version: cfae461cedfdcab6e261a26eb77db53695623303
   subpackages:
   - context
 testImports: []
