@@ -13,3 +13,4 @@ terraform.tfvars
 terraform.tfstate
 terraform.tfstate.backup
 *.log
+.govmomi/
