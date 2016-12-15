@@ -2,6 +2,10 @@
 
 glide install -v
 
-GOOS=darwin  GOARCH=amd64 go build -o bin/terraform-provider-vmware_macos_x64
-GOOS=linux   GOARCH=amd64 go build -o bin/terraform-provider-vmware_linux_x64
-GOOS=windows GOARCH=amd64 go build -o bin/terraform-provider-vmware.exe_windows_x64
+export CGO_ENABLED=0
+export GOARCH=amd64
+
+mkdir -p bin
+GOOS=darwin  go build -o bin/terraform-provider-vmware.macos
+GOOS=linux   go build -o bin/terraform-provider-vmware.linux
+GOOS=windows go build -o bin/terraform-provider-vmware.exe

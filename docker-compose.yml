@@ -2,7 +2,7 @@ version: '2'
 services:
   build:
     build:
-      context: docker/
+      context: docker/build
     volumes:
       - .:/go/src/github.com/mkuzmin/terraform-vsphere/
     working_dir: /go/src/github.com/mkuzmin/terraform-vsphere/
