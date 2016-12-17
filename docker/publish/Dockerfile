@@ -1,7 +1,7 @@
 FROM alpine:3.4
 
 ARG TERRAFORM_VERSION=0.8.1
-ARG VSPHERE_VERSION=1.0.pre2
+ARG VSPHERE_VERSION=1.0
 
 RUN apk update && \
     apk add ca-certificates wget git && \

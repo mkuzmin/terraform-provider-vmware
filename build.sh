@@ -1,5 +1,8 @@
 #!/bin/sh -eux
 
+rm -rf bin/
+rm -rf vendor/
+
 glide install -v
 
 export CGO_ENABLED=0
