@@ -46,6 +46,7 @@ $ terraform apply
 - `folder` - VM folder to create the virtual machine in `folder/subfolder` format. By default the same, as base VM.
 - `host` - by default the same, as base VM. Required if base image is a template.
 - `resource_pool` in `pool/nested-pool` format. By default a root of the host.
+- `datastore` - by default the same, as base VM.
 - `linked_clone` - if *false* (default), full clone is performed from a current state. If *true*, machine is created as a [linked clone](https://pubs.vmware.com/vcd-51/topic/com.vmware.vcloud.admin.doc_51/GUID-4C232B62-4C95-44FF-AD8F-DA2588A5BACC.html) from latest snapshot of base VM.
 - `cpus` - a number of CPU sockets in the new VM. By default the same, as base VM.
 - `memory` - RAM size in MB. By default the same, as base VM.

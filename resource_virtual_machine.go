@@ -52,6 +52,11 @@ func resourceVirtualMachine() *schema.Resource {
 				Optional: true,
 				Computed: true,
 			},
+			"datastore": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
 
 			"linked_clone": &schema.Schema{
 				Type:     schema.TypeBool,
@@ -106,10 +111,11 @@ func resourceVirtualMachine() *schema.Resource {
 
 func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*vim25.Client)
+	finder := find.NewFinder(client, false)
+	ctx := context.TODO()
 
 	dc_name := d.Get("datacenter").(string)
 	if dc_name == "" {
-		finder := find.NewFinder(client, false)
 		dc, err := finder.DefaultDatacenter(context.TODO())
 		if err != nil {
 			return fmt.Errorf("Error reading default datacenter: %s", err)
@@ -120,6 +126,7 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
 			return fmt.Errorf("Error reading datacenter name: %s", err)
 		}
 		dc_name = dc_mo.Name
+		finder.SetDatacenter(dc)
 		d.Set("datacenter", dc_name)
 	}
 
@@ -199,6 +206,16 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
 	var pool_mor types.ManagedObjectReference
 	pool_mor = pool_ref.Reference()
 	relocateSpec.Pool = &pool_mor
+
+	datastore_name := d.Get("datastore").(string)
+	if datastore_name != "" {
+		datastore_ref, err := finder.Datastore(ctx, fmt.Sprintf("/%v/datastore/%v", dc_name, datastore_name))
+		if err != nil {
+			return fmt.Errorf("Cannot find datastore '%s'", datastore_name)
+		}
+		datastore_mor := datastore_ref.Reference()
+		relocateSpec.Datastore = &datastore_mor
+	}
 
 	if d.Get("linked_clone").(bool) {
 		relocateSpec.DiskMoveType = "createNewChildDiskBacking"
