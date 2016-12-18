@@ -10,6 +10,3 @@ rty
 
 fgh
 cvb
-
-
-zzz
