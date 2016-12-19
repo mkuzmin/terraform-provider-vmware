@@ -232,11 +232,9 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
 	var ov []types.BaseOptionValue
 	if len(params) > 0 {
 		for k, v := range params {
-			key := strings.Replace(k, "_", ".", -1)
-			value := v
 			o := types.OptionValue{
-				Key:   key,
-				Value: &value,
+				Key:   k,
+				Value: &v,
 			}
 			ov = append(ov, &o)
 		}

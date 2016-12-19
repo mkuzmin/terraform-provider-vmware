@@ -10,8 +10,8 @@ resource "vmware_virtual_machine" "vm" {
   power_on = false
   configuration_parameters = {
     parameter1 = "value"
-    parameter2_with_dots = "value"
-    parameter_crash1 = 1
-    parameter_crash2 = 1
+    parameter2.with.dots = "value"
+    parameter.crash1 = 1
+    parameter.crash2 = 1
   }
 }
