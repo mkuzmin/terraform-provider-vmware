@@ -234,7 +234,7 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
 		for k, v := range params {
 			o := types.OptionValue{
 				Key:   k,
-				Value: &v,
+				Value: v,
 			}
 			ov = append(ov, &o)
 		}

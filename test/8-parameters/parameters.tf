@@ -9,8 +9,9 @@ resource "vmware_virtual_machine" "vm" {
   image = "empty"
   power_on = false
   configuration_parameters = {
-    parameter1 = "value"
-    parameter2.with.dots = "value"
+    parameter1 = "value1"
+    parameter2.with.dots = "value2"
+
     parameter.crash1 = 1
     parameter.crash2 = 1
   }
