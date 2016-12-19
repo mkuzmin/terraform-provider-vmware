@@ -50,7 +50,7 @@ $ terraform apply
 - `linked_clone` - if *false* (default), full clone is performed from a current state. If *true*, machine is created as a [linked clone](https://pubs.vmware.com/vcd-51/topic/com.vmware.vcloud.admin.doc_51/GUID-4C232B62-4C95-44FF-AD8F-DA2588A5BACC.html) from latest snapshot of base VM.
 - `cpus` - a number of CPU sockets in the new VM. By default the same, as base VM.
 - `memory` - RAM size in MB. By default the same, as base VM.
-- `configuration_parameters` - custom VM parameters. If a name contains dots, they should be replaced by underscores.
+- `configuration_parameters` - custom VM parameters.
 - `power_on` - if *true* (default), start the newly created machine, and wait till guest OS reports its IP address. VMware Tools must be installed. Timeout is 15 minutes.
 - `domain` - enables guest VM customization and hostname renaming. The value specifies domain suffix, hostname is got from `name`.
 - `ip_address` - static IP address.
@@ -82,8 +82,8 @@ resource "vmware_virtual_machine" "frontend" {
   cpus = 2
   memory = 8192
   configuration_parameters = {
-    isolation_tools_copy_disable = "false"
-    isolation_tools_paste_disable = "false"
+    isolation.tools.copy.disable = "false"
+    isolation.tools.paste.disable = "false"
   }
 
   power_on = true
