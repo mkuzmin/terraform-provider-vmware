@@ -3,7 +3,7 @@
 > **Several vSphere providers were developed in parallel. This plugin was first,
 > but Terraform team adopted another implementation. Bad luck, yeah.**
 >
-> **It provides less features, but can be more stable in some cases.
+> **It provides less features, but can be more stable in some cases.**
 
 This is a plugin for HashiCorp [Terraform](https://terraform.io/), which helps launching virtual machines on VMware vCenter.
 
