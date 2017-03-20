@@ -4,6 +4,6 @@ services:
     build:
       context: docker/
     volumes:
-      - .:/go/src/github.com/mkuzmin/terraform-vsphere/
-    working_dir: /go/src/github.com/mkuzmin/terraform-vsphere/
+      - .:/go/src/github.com/mkuzmin/terraform-provider-vmware/
+    working_dir: /go/src/github.com/mkuzmin/terraform-provider-vmware/
     command: ./build.sh

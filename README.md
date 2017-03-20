@@ -1,4 +1,4 @@
-# Terraform-vSphere Provider
+# Terraform Provider for VMware vSphere
 
 > **Several vSphere providers were developed in parallel. This plugin was first,
 > but Terraform team adopted another implementation. Bad luck, yeah.**
