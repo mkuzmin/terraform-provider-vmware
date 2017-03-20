@@ -1,4 +1,4 @@
-FROM golang:1.7.4
+FROM golang:1.8.0
 ARG GLIDE_VERSION=0.12.3
 
 RUN export DEBIAN_FRONTEND=noninteractive && \

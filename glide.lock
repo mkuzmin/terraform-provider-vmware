@@ -1,5 +1,5 @@
-hash: 6c0b545c10e57f49df7a582a6d0466ad3da83cf0f94fd5f12a9d9d4b2567d835
-updated: 2016-12-14T01:05:09.7142295+03:00
+hash: f9bc409724ec6791fddf79b490f3089d1ce3ba18c5004ea7e3bb00a33e3ab65f
+updated: 2017-03-20T15:47:38.313405314+03:00
 imports:
 - name: github.com/apparentlymart/go-cidr
   version: a3ebdb999b831ecb6ab8a226e31b07b2b9061c47
@@ -71,7 +71,7 @@ imports:
   - parser
   - scanner
 - name: github.com/hashicorp/terraform
-  version: 142dd256ad48ab17b6019fe9cd18712167fcf4b4
+  version: 7c25ef851bd26f720e749983597b36b17061e3ca
   subpackages:
   - config
   - config/module
@@ -92,6 +92,8 @@ imports:
   version: 5af94aef99f597e6a9e1f6ac6be6ce0f3c96b49d
 - name: github.com/mitchellh/go-homedir
   version: b8bc1bf767474819792c23f32d8286a45736f1c6
+- name: github.com/mitchellh/hashstructure
+  version: ab25296c0f51f1022f01cd99dfb45f1775de8799
 - name: github.com/mitchellh/mapstructure
   version: bfdb1a85537d60bc7e954e600c250219ea497417
 - name: github.com/mitchellh/reflectwalk
@@ -99,7 +101,7 @@ imports:
 - name: github.com/satori/go.uuid
   version: b061729afc07e77a8aa4fad0a2fd840958f1942a
 - name: github.com/vmware/govmomi
-  version: ab40ac7324b5d45b8f1677d87ec0d26349448d41
+  version: b4a3f7a1d0352866c03f42208cddceb53fe12d16
   subpackages:
   - find
   - list
