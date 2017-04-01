@@ -67,6 +67,10 @@ func resourceVmFolderDelete(d *schema.ResourceData, meta interface{}) error {
 	mor := types.ManagedObjectReference{Type: "Folder", Value: d.Id()}
 	folder := object.NewFolder(client, mor)
 
+	if children, _ := folder.Children(ctx); len(children) > 0 {
+		return fmt.Errorf("Folder is not empty")
+	}
+
 	task, err := folder.Destroy(ctx)
 	if err != nil {
 		return fmt.Errorf("Error deleting folder: %s", err)
