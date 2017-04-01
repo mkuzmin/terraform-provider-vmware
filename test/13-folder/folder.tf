@@ -6,6 +6,6 @@ provider "vmware" {
 }
 
 resource "vmware_vm_folder" "test" {
-  parent =  "/SPB/vm/parent"
+  parent =  "/DC1/vm/folder1"
   name =  "test"
 }

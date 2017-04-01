@@ -49,7 +49,7 @@ func resourceVmFolderCreate(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("Cannot create folder: %s", err)
 	}
 
-	d.SetId(folder.InventoryPath)
+	d.SetId(folder.Reference().Value)
 
 	return nil
 }
