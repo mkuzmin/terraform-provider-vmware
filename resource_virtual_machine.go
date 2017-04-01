@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/vmware/govmomi/find"
@@ -21,85 +22,85 @@ func resourceVirtualMachine() *schema.Resource {
 		Delete: resourceVirtualMachineDelete,
 
 		Schema: map[string]*schema.Schema{
-			"name": &schema.Schema{
+			"name": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
-			"image": &schema.Schema{
+			"image": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"datacenter": &schema.Schema{
+			"datacenter": {
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
 			},
-			"folder": &schema.Schema{
+			"folder": {
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
 			},
-			"host": &schema.Schema{
+			"host": {
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
 			},
-			"resource_pool": &schema.Schema{
+			"resource_pool": {
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
 			},
-			"datastore": &schema.Schema{
+			"datastore": {
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
 			},
 
-			"linked_clone": &schema.Schema{
+			"linked_clone": {
 				Type:     schema.TypeBool,
 				Optional: true,
 				Default:  false,
 				ForceNew: true,
 			},
-			"cpus": &schema.Schema{
+			"cpus": {
 				Type:     schema.TypeInt,
 				Optional: true,
 				Computed: true,
 			},
-			"memory": &schema.Schema{
+			"memory": {
 				Type:     schema.TypeInt,
 				Optional: true,
 				Computed: true,
 			},
-			"domain": &schema.Schema{
+			"domain": {
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
 			},
-			"ip_address": &schema.Schema{
+			"ip_address": {
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
 			},
-			"subnet_mask": &schema.Schema{
+			"subnet_mask": {
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
 			},
-			"gateway": &schema.Schema{
+			"gateway": {
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
 			},
-			"configuration_parameters": &schema.Schema{
+			"configuration_parameters": {
 				Type:     schema.TypeMap,
 				Optional: true,
 				ForceNew: true,
 			},
-			"power_on": &schema.Schema{
+			"power_on": {
 				Type:     schema.TypeBool,
 				Optional: true,
 				Default:  true,
@@ -165,7 +166,7 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
 	host_name := d.Get("host").(string)
 	if host_name == "" {
 		if image_mo.Config.Template == true {
-			return fmt.Errorf("Image is a template, 'host' is a required")
+			return errors.New("Image is a template, 'host' is a required")
 		} else {
 			var pool_mo mo.ResourcePool
 			err = property.DefaultCollector(client).RetrieveOne(ctx, *image_mo.ResourcePool, []string{"owner"}, &pool_mo)
@@ -248,7 +249,7 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
 	}
 	if d.Get("linked_clone").(bool) {
 		if image_mo.Snapshot == nil {
-			return fmt.Errorf("`linked_clone=true`, but image VM has no snapshots")
+			return errors.New("`linked_clone=true`, but image VM has no snapshots")
 		}
 		cloneSpec.Snapshot = image_mo.Snapshot.CurrentSnapshot
 	}
@@ -257,7 +258,7 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
 	ip_address := d.Get("ip_address").(string)
 	if domain != "" {
 		if image_mo.Guest.ToolsVersionStatus2 == "guestToolsNotInstalled" {
-			return fmt.Errorf("VMware tools are not installed in base VM")
+			return errors.New("VMware tools are not installed in base VM")
 		}
 		if !strings.Contains(image_mo.Config.GuestFullName, "Linux") && !strings.Contains(image_mo.Config.GuestFullName, "CentOS") {
 			return fmt.Errorf("Guest customization is supported only for Linux. Base image OS is: %s", image_mo.Config.GuestFullName)
@@ -277,7 +278,7 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
 		if ip_address != "" {
 			mask := d.Get("subnet_mask").(string)
 			if mask == "" {
-				return fmt.Errorf("'subnet_mask' must be set, if static 'ip_address' is specified")
+				return errors.New("'subnet_mask' must be set, if static 'ip_address' is specified")
 			}
 			customizationSpec.NicSettingMap[0].Adapter.Ip = &types.CustomizationFixedIp{
 				IpAddress: ip_address,
@@ -292,7 +293,7 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
 		}
 		cloneSpec.Customization = &customizationSpec
 	} else if ip_address != "" {
-		return fmt.Errorf("'domain' must be set, if static 'ip_address' is specified")
+		return errors.New("'domain' must be set, if static 'ip_address' is specified")
 	}
 
 	task, err := image.Clone(ctx, folder, d.Get("name").(string), cloneSpec)

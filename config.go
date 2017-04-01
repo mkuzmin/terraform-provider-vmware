@@ -25,6 +25,6 @@ func (c *Config) Client() (*vim25.Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Error setting up client: %s", err)
 	}
-	log.Printf("[INFO] vSphere Client configured")
+	log.Println("[INFO] vSphere Client configured")
 	return client.Client, nil
 }
