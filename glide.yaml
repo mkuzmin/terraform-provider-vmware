@@ -1,4 +1,4 @@
-package: github.com/mkuzmin/terraform-vsphere
+package: github.com/mkuzmin/terraform-provider-vmware
 import:
 - package: github.com/hashicorp/terraform
   version: v0.9.1

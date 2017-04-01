@@ -1,5 +1,5 @@
-hash: f9bc409724ec6791fddf79b490f3089d1ce3ba18c5004ea7e3bb00a33e3ab65f
-updated: 2017-03-20T15:47:38.313405314+03:00
+hash: 34369e9eed885d38101be3bb0a5c1718cae02153f5bc37a19c88c670a23aca8f
+updated: 2017-04-01T14:18:23.545310925+03:00
 imports:
 - name: github.com/apparentlymart/go-cidr
   version: a3ebdb999b831ecb6ab8a226e31b07b2b9061c47
