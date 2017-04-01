@@ -6,6 +6,8 @@ import (
 	"github.com/vmware/govmomi/vim25"
 	"golang.org/x/net/context"
 	"fmt"
+	"github.com/vmware/govmomi/vim25/types"
+	"github.com/vmware/govmomi/object"
 )
 
 func resourceVmFolder() *schema.Resource {
@@ -50,7 +52,6 @@ func resourceVmFolderCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	d.SetId(folder.Reference().Value)
-
 	return nil
 }
 
@@ -60,8 +61,21 @@ func resourceVmFolderRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceVmFolderDelete(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*vim25.Client)
+	ctx := context.TODO()
 
-	// check VMs inside
+	mor := types.ManagedObjectReference{Type: "Folder", Value: d.Id()}
+	folder := object.NewFolder(client, mor)
 
+	task, err := folder.Destroy(ctx)
+	if err != nil {
+		return fmt.Errorf("Error deleting folder: %s", err)
+	}
+	_, err = task.WaitForResult(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("Error deleting folder: %s", err)
+	}
+
+	d.SetId("")
 	return nil
 }
