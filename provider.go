@@ -8,24 +8,24 @@ import (
 func Provider() terraform.ResourceProvider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
-			"vcenter_server": &schema.Schema{
+			"vcenter_server": {
 				Type:        schema.TypeString,
 				Required:    true,
 				Description: "vCenter server address",
 			},
-			"user": &schema.Schema{
+			"user": {
 				Type:        schema.TypeString,
 				Required:    true,
 				DefaultFunc: schema.EnvDefaultFunc("VSPHERE_USER", nil),
 				Description: "User account",
 			},
-			"password": &schema.Schema{
+			"password": {
 				Type:        schema.TypeString,
 				Required:    true,
 				DefaultFunc: schema.EnvDefaultFunc("VSPHERE_PASSWORD", nil),
 				Description: "Password",
 			},
-			"insecure_connection": &schema.Schema{
+			"insecure_connection": {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
