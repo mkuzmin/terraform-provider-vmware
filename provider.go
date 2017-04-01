@@ -24,6 +24,7 @@ func Provider() terraform.ResourceProvider {
 				Required:    true,
 				DefaultFunc: schema.EnvDefaultFunc("VSPHERE_PASSWORD", nil),
 				Description: "Password",
+				Sensitive:   true,
 			},
 			"insecure_connection": {
 				Type:        schema.TypeBool,
