@@ -19,17 +19,17 @@ func resourceVmFolder() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			// TODO: move to provider parameters
-			"datacenter": &schema.Schema{
+			"datacenter": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
-			"parent": &schema.Schema{
+			"parent": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
-			"name": &schema.Schema{
+			"name": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
