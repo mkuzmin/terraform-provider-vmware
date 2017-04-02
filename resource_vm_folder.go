@@ -57,18 +57,23 @@ func resourceVmFolderCreate(d *schema.ResourceData, meta interface{}) error {
 
 func resourceVmFolderRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*vim25.Client)
+	finder := find.NewFinder(client, false)
 	ctx := context.TODO()
 
 	mor := types.ManagedObjectReference{Type: "Folder", Value: d.Id()}
-	folder := object.NewFolder(client, mor)
-
-	name, err := folder.ObjectName(ctx)
-	if err == nil {
-		d.Set("name", name)
-	} else {
+	obj, err := finder.ObjectReference(ctx, mor)
+	if err != nil {
 		d.Set("name", "")
+		return nil
 	}
 
+	folder := obj.(*object.Folder)
+	name, err := folder.ObjectName(ctx)
+	if err != nil {
+		return fmt.Errorf("Cannot read folder: %s", err)
+	}
+
+	d.Set("name", name)
 	return nil
 }
 
