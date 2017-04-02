@@ -30,7 +30,8 @@ func resourceVmFolder() *schema.Resource {
 				Required: true,
 				StateFunc: func(v interface{}) string {
 					value := v.(string)
-					return strings.Trim(value, "/")
+					path :=  strings.Trim(value, "/")
+					return strings.Join([]string{"/", path}, "")
 				},
 			},
 			"name": {
