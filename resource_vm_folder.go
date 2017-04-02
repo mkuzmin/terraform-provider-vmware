@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/vmware/govmomi/vim25/types"
 	"github.com/vmware/govmomi/object"
+	"strings"
 )
 
 func resourceVmFolder() *schema.Resource {
@@ -17,6 +18,12 @@ func resourceVmFolder() *schema.Resource {
 		Delete: resourceVmFolderDelete,
 
 		Schema: map[string]*schema.Schema{
+			// TODO: move to provider parameters
+			"datacenter": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+				ForceNew: true,
+			},
 			"parent": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
@@ -38,10 +45,13 @@ func resourceVmFolderCreate(d *schema.ResourceData, meta interface{}) error {
 	finder := find.NewFinder(client, false)
 	ctx := context.TODO()
 
+	datacenter := d.Get("datacenter").(string)
 	parent_name := d.Get("parent").(string)
 	name := d.Get("name").(string)
 
-	parent_folder, err := finder.Folder(ctx, parent_name)
+	path := strings.Join([]string{datacenter, "vm", parent_name}, "/")
+
+	parent_folder, err := finder.Folder(ctx, path)
 	if err != nil {
 		return fmt.Errorf("Cannot find parent folder: %s", err)
 	}

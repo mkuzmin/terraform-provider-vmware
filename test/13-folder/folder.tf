@@ -6,6 +6,7 @@ provider "vmware" {
 }
 
 resource "vmware_vm_folder" "test" {
-  parent =  "/DC1/vm/folder1"
+  datacenter = "DC1"
+  parent =  "/folder1/q/"
   name =  "test"
 }
