@@ -79,10 +79,16 @@ func resourceVmFolderRead(d *schema.ResourceData, meta interface{}) error {
 
 func resourceVmFolderDelete(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*vim25.Client)
+	finder := find.NewFinder(client, false)
 	ctx := context.TODO()
 
 	mor := types.ManagedObjectReference{Type: "Folder", Value: d.Id()}
-	folder := object.NewFolder(client, mor)
+	obj, err := finder.ObjectReference(ctx, mor)
+	if err != nil {
+		d.SetId("")
+		return nil
+	}
+	folder := obj.(*object.Folder)
 
 	if children, _ := folder.Children(ctx); len(children) > 0 {
 		return fmt.Errorf("Folder is not empty")
@@ -90,11 +96,11 @@ func resourceVmFolderDelete(d *schema.ResourceData, meta interface{}) error {
 
 	task, err := folder.Destroy(ctx)
 	if err != nil {
-		return fmt.Errorf("Error deleting folder: %s", err)
+		return fmt.Errorf("Cannot delete folder: %s", err)
 	}
 	_, err = task.WaitForResult(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("Error deleting folder: %s", err)
+		return fmt.Errorf("Cannot delete folder: %s", err)
 	}
 
 	d.SetId("")
