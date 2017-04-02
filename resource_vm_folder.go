@@ -28,6 +28,10 @@ func resourceVmFolder() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
+				StateFunc: func(v interface{}) string {
+					value := v.(string)
+					return strings.Trim(value, "/")
+				},
 			},
 			"name": {
 				Type:     schema.TypeString,
