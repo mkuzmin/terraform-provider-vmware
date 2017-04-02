@@ -39,7 +39,7 @@ func resourceVmFolder() *schema.Resource {
 				ForceNew: true,
 			},
 
-			// create parent folders
+			// TODO: create parent folders?
 		},
 	}
 }
