@@ -63,7 +63,7 @@ func resourceVmFolderRead(d *schema.ResourceData, meta interface{}) error {
 	mor := types.ManagedObjectReference{Type: "Folder", Value: d.Id()}
 	obj, err := finder.ObjectReference(ctx, mor)
 	if err != nil {
-		d.Set("name", "")
+		d.SetId("")
 		return nil
 	}
 
