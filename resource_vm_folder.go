@@ -15,6 +15,7 @@ func resourceVmFolder() *schema.Resource {
 	return &schema.Resource{
 		Create: resourceVmFolderCreate,
 		Read:   resourceVmFolderRead,
+		Update: resourceVmFolderUpdate,
 		Delete: resourceVmFolderDelete,
 
 		Schema: map[string]*schema.Schema{
@@ -36,7 +37,6 @@ func resourceVmFolder() *schema.Resource {
 			"name": {
 				Type:     schema.TypeString,
 				Required: true,
-				ForceNew: true,
 			},
 
 			// TODO: create parent folders?
@@ -80,14 +80,42 @@ func resourceVmFolderRead(d *schema.ResourceData, meta interface{}) error {
 		d.SetId("")
 		return nil
 	}
-
 	folder := obj.(*object.Folder)
+
 	name, err := folder.ObjectName(ctx)
 	if err != nil {
 		return fmt.Errorf("Cannot read folder: %s", err)
 	}
 
 	d.Set("name", name)
+	return nil
+}
+
+func resourceVmFolderUpdate(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*vim25.Client)
+	finder := find.NewFinder(client, false)
+	ctx := context.TODO()
+
+	mor := types.ManagedObjectReference{Type: "Folder", Value: d.Id()}
+	obj, err := finder.ObjectReference(ctx, mor)
+	if err != nil {
+		d.SetId("")
+		return nil
+	}
+	folder := obj.(*object.Folder)
+
+	if d.HasChange("name") {
+		name := d.Get("name").(string)
+		task, err := folder.Rename(ctx, name)
+		if err != nil {
+			return fmt.Errorf("Cannot rename folder: %s", err)
+		}
+		_, err = task.WaitForResult(ctx, nil)
+		if err != nil {
+			return fmt.Errorf("Cannot rename folder: %s", err)
+		}
+	}
+
 	return nil
 }
 
