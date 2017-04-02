@@ -103,6 +103,7 @@ func resourceVmFolderUpdate(d *schema.ResourceData, meta interface{}) error {
 	}
 	folder := obj.(*object.Folder)
 
+	d.Partial(true)
 	if d.HasChange("name") {
 		name := d.Get("name").(string)
 		task, err := folder.Rename(ctx, name)
@@ -113,6 +114,7 @@ func resourceVmFolderUpdate(d *schema.ResourceData, meta interface{}) error {
 		if err != nil {
 			return fmt.Errorf("Cannot rename folder: %s", err)
 		}
+		d.SetPartial("name")
 	}
 
 	if d.HasChange("parent") {
@@ -133,8 +135,10 @@ func resourceVmFolderUpdate(d *schema.ResourceData, meta interface{}) error {
 		if err != nil {
 			return fmt.Errorf("Cannot move folder: %s", err)
 		}
+		d.SetPartial("parent")
 	}
 
+	d.Partial(false)
 	return nil
 }
 
