@@ -28,7 +28,6 @@ func resourceVmFolder() *schema.Resource {
 			"parent": {
 				Type:     schema.TypeString,
 				Required: true,
-				ForceNew: true,
 				StateFunc: func(v interface{}) string {
 					value := v.(string)
 					return strings.Trim(value, "/")
@@ -113,6 +112,26 @@ func resourceVmFolderUpdate(d *schema.ResourceData, meta interface{}) error {
 		_, err = task.WaitForResult(ctx, nil)
 		if err != nil {
 			return fmt.Errorf("Cannot rename folder: %s", err)
+		}
+	}
+
+	if d.HasChange("parent") {
+		datacenter := d.Get("datacenter").(string)
+		parent_name := d.Get("parent").(string)
+
+		path := strings.Join([]string{datacenter, "vm", parent_name}, "/")
+		parent_folder, err := finder.Folder(ctx, path)
+		if err != nil {
+			return fmt.Errorf("Cannot find parent folder: %s", err)
+		}
+
+		task, err := parent_folder.MoveInto(ctx, []types.ManagedObjectReference{folder.Reference()})
+		if err != nil {
+			return fmt.Errorf("Cannot move folder: %s", err)
+		}
+		_, err = task.WaitForResult(ctx, nil)
+		if err != nil {
+			return fmt.Errorf("Cannot move folder: %s", err)
 		}
 	}
 
