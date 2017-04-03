@@ -9,6 +9,7 @@ import (
 	"github.com/vmware/govmomi/vim25/types"
 	"github.com/vmware/govmomi/object"
 	"strings"
+	"github.com/vmware/govmomi/vim25/mo"
 )
 
 func resourceVmFolder() *schema.Resource {
@@ -82,12 +83,26 @@ func resourceVmFolderRead(d *schema.ResourceData, meta interface{}) error {
 	}
 	folder := obj.(*object.Folder)
 
-	name, err := folder.ObjectName(ctx)
+
+	var o mo.ManagedEntity
+	err = folder.Properties(ctx, folder.Reference(), []string{"name", "parent"}, &o)
 	if err != nil {
 		return fmt.Errorf("Cannot read folder: %s", err)
 	}
+	d.Set("name", o.Name)
 
-	d.Set("name", name)
+	obj, err = finder.ObjectReference(ctx, *o.Parent)
+	if err != nil {
+		return fmt.Errorf("Cannot read folder: %s", err)
+	}
+	parent_folder := obj.(*object.Folder)
+	datacenter := d.Get("datacenter").(string)
+	prefix := strings.Join([]string{"/", datacenter, "/vm"}, "")
+	path := strings.TrimPrefix(parent_folder.InventoryPath, prefix)
+	path =  strings.TrimPrefix(path, "/")
+	path =  strings.Join([]string{"/", path}, "")
+	d.Set("parent", path)
+
 	return nil
 }
 
