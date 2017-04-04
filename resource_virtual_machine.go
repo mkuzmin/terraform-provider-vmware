@@ -372,16 +372,18 @@ func resourceVirtualMachineDelete(d *schema.ResourceData, meta interface{}) erro
 	if err != nil {
 		return fmt.Errorf("Error powering vm off: %s", err)
 	}
-	_, err = task.WaitForResult(ctx, nil)
+	err = task.Wait(ctx)
 	if err != nil {
-		return fmt.Errorf("Error powering vm off: %s", err)
+		if !strings.Contains(err.Error(), "in the current state (Powered off)") {
+			return fmt.Errorf("Error powering vm off: %s", err)
+		}
 	}
 
 	task, err = vm.Destroy(ctx)
 	if err != nil {
 		return fmt.Errorf("Error deleting vm: %s", err)
 	}
-	_, err = task.WaitForResult(ctx, nil)
+	err = task.Wait(ctx)
 	if err != nil {
 		return fmt.Errorf("Error deleting vm: %s", err)
 	}
