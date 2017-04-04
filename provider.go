@@ -1,12 +1,19 @@
 package main
 
 import (
+	"context"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/terraform"
+	"github.com/vmware/govmomi/vim25"
 )
 
+type providerMeta struct {
+	context context.Context
+	client  *vim25.Client
+}
+
 func Provider() terraform.ResourceProvider {
-	return &schema.Provider{
+	provider := &schema.Provider{
 		Schema: map[string]*schema.Schema{
 			"vcenter_server": {
 				Type:        schema.TypeString,
@@ -37,18 +44,28 @@ func Provider() terraform.ResourceProvider {
 		ResourcesMap: map[string]*schema.Resource{
 			"vmware_virtual_machine": resourceVirtualMachine(),
 		},
-
-		ConfigureFunc: providerConfigure,
 	}
+	provider.ConfigureFunc = providerConfigure(provider)
+
+	return provider
 }
 
-func providerConfigure(d *schema.ResourceData) (interface{}, error) {
-	config := Config{
-		vCenter:  d.Get("vcenter_server").(string),
-		User:     d.Get("user").(string),
-		Password: d.Get("password").(string),
-		Insecure: d.Get("insecure_connection").(bool),
-	}
+func providerConfigure(p *schema.Provider) schema.ConfigureFunc {
+	return func(d *schema.ResourceData) (interface{}, error) {
+		config := Config{
+			vCenter:  d.Get("vcenter_server").(string),
+			User:     d.Get("user").(string),
+			Password: d.Get("password").(string),
+			Insecure: d.Get("insecure_connection").(bool),
+		}
 
-	return config.Client()
+		ctx := p.StopContext()
+		client, err := config.Client(ctx)
+
+		return providerMeta{
+			client:  client,
+			context: ctx,
+		}, err
+
+	}
 }

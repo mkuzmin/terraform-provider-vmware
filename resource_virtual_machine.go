@@ -7,10 +7,8 @@ import (
 	"github.com/vmware/govmomi/find"
 	"github.com/vmware/govmomi/object"
 	"github.com/vmware/govmomi/property"
-	"github.com/vmware/govmomi/vim25"
 	"github.com/vmware/govmomi/vim25/mo"
 	"github.com/vmware/govmomi/vim25/types"
-	"golang.org/x/net/context"
 	"log"
 	"strings"
 )
@@ -111,9 +109,10 @@ func resourceVirtualMachine() *schema.Resource {
 }
 
 func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*vim25.Client)
+	providerMeta := meta.(*providerMeta)
+	client := providerMeta.client
+	ctx := providerMeta.context
 	finder := find.NewFinder(client, false)
-	ctx := context.TODO()
 
 	dc_name := d.Get("datacenter").(string)
 	if dc_name == "" {
@@ -326,8 +325,9 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
 }
 
 func resourceVirtualMachineRead(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*vim25.Client)
-	ctx := context.TODO()
+	providerMeta := meta.(*providerMeta)
+	client := providerMeta.client
+	ctx := providerMeta.context
 	vm_mor := types.ManagedObjectReference{Type: "VirtualMachine", Value: d.Id()}
 	vm := object.NewVirtualMachine(client, vm_mor)
 
@@ -361,8 +361,9 @@ func resourceVirtualMachineRead(d *schema.ResourceData, meta interface{}) error 
 }
 
 func resourceVirtualMachineDelete(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*vim25.Client)
-	ctx := context.TODO()
+	providerMeta := meta.(*providerMeta)
+	client := providerMeta.client
+	ctx := providerMeta.context
 
 	vm_mor := types.ManagedObjectReference{Type: "VirtualMachine", Value: d.Id()}
 	vm := object.NewVirtualMachine(client, vm_mor)
