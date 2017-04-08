@@ -109,7 +109,7 @@ func resourceVirtualMachine() *schema.Resource {
 }
 
 func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) error {
-	providerMeta := meta.(*providerMeta)
+	providerMeta := meta.(providerMeta)
 	client := providerMeta.client
 	ctx := providerMeta.context
 	finder := find.NewFinder(client, false)
@@ -325,7 +325,7 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
 }
 
 func resourceVirtualMachineRead(d *schema.ResourceData, meta interface{}) error {
-	providerMeta := meta.(*providerMeta)
+	providerMeta := meta.(providerMeta)
 	client := providerMeta.client
 	ctx := providerMeta.context
 	vm_mor := types.ManagedObjectReference{Type: "VirtualMachine", Value: d.Id()}
@@ -361,7 +361,7 @@ func resourceVirtualMachineRead(d *schema.ResourceData, meta interface{}) error 
 }
 
 func resourceVirtualMachineDelete(d *schema.ResourceData, meta interface{}) error {
-	providerMeta := meta.(*providerMeta)
+	providerMeta := meta.(providerMeta)
 	client := providerMeta.client
 	ctx := providerMeta.context
 
