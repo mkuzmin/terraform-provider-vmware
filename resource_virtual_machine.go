@@ -30,7 +30,6 @@ func resourceVirtualMachine() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
-
 			"datacenter": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -72,6 +71,12 @@ func resourceVirtualMachine() *schema.Resource {
 				Type:     schema.TypeInt,
 				Optional: true,
 				Computed: true,
+			},
+			"disks": {
+				Type:     schema.TypeList,
+				Optional: true,
+				ForceNew: true,
+				Elem: resourceVirtualMachineDisk(),
 			},
 			"domain": {
 				Type:     schema.TypeString,
@@ -228,6 +233,53 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
 		confSpec.MemoryMB = int64(d.Get("memory").(int))
 	}
 
+	var devices object.VirtualDeviceList
+
+	for _, diskValue := range d.Get("disks").([]interface{}) {
+		if disk, ok := diskValue.(map[string]interface{}); ok {
+			diskDatastoreName := disk["datastore"].(string)
+
+			datastore, err := finder.Datastore(ctx, fmt.Sprintf("/%v/datastore/%v", dc_name, diskDatastoreName))
+			if err != nil {
+				return fmt.Errorf("Failed to find datastore \"%s\": %v", diskDatastoreName, err)
+			}
+
+			datastoreRef := datastore.Reference()
+
+			controllerDevice, err := devices.CreateSCSIController("")
+			if err != nil {
+				return err
+			}
+
+			devices = append(devices, controllerDevice)
+
+			diskDevice := &types.VirtualDisk{
+				VirtualDevice: types.VirtualDevice{
+					Key: devices.NewKey(),
+					Backing: &types.VirtualDiskFlatVer2BackingInfo{
+						DiskMode:        string(types.VirtualDiskModeIndependent_persistent),
+						VirtualDeviceFileBackingInfo: types.VirtualDeviceFileBackingInfo{
+							FileName:  datastore.Path(ensureVmdkSuffix(disk["path"].(string))),
+							Datastore: &datastoreRef,
+						},
+					},
+				},
+			}
+
+			devices = append(devices, diskDevice)
+
+			devices.AssignController(diskDevice, controllerDevice.(types.BaseVirtualController))
+
+			confSpec.DeviceChange = append(confSpec.DeviceChange, &types.VirtualDeviceConfigSpec{
+				Operation: types.VirtualDeviceConfigSpecOperationAdd,
+				Device: controllerDevice,
+			}, &types.VirtualDeviceConfigSpec{
+				Operation: types.VirtualDeviceConfigSpecOperationAdd,
+				Device: diskDevice,
+			})
+		}
+	}
+
 	params := d.Get("configuration_parameters").(map[string]interface{})
 	var ov []types.BaseOptionValue
 	if len(params) > 0 {
@@ -365,6 +417,9 @@ func resourceVirtualMachineDelete(d *schema.ResourceData, meta interface{}) erro
 	client := providerMeta.client
 	ctx := providerMeta.context
 
+	finder := find.NewFinder(client, false)
+	dc_name := d.Get("datacenter").(string)
+
 	vm_mor := types.ManagedObjectReference{Type: "VirtualMachine", Value: d.Id()}
 	vm := object.NewVirtualMachine(client, vm_mor)
 
@@ -377,6 +432,42 @@ func resourceVirtualMachineDelete(d *schema.ResourceData, meta interface{}) erro
 		if !strings.Contains(err.Error(), "in the current state (Powered off)") {
 			return fmt.Errorf("Error powering vm off: %s", err)
 		}
+	}
+
+	virtualDiskFiles := make(map[string]bool)
+	for _, diskValue := range d.Get("disks").([]interface{}) {
+		if disk, ok := diskValue.(map[string]interface{}); ok {
+			diskDatastoreName := disk["datastore"].(string)
+
+			datastore, err := finder.Datastore(ctx, fmt.Sprintf("/%v/datastore/%v", dc_name, diskDatastoreName))
+			if err != nil {
+				return fmt.Errorf("Failed to find datastore \"%s\": %v", diskDatastoreName, err)
+			}
+
+			virtualDiskFiles[datastore.Path(ensureVmdkSuffix(disk["path"].(string)))] = true
+		}
+	}
+
+	devices, err := vm.Device(ctx)
+	if err != nil {
+		return err
+	}
+
+	var devicesToDestroy object.VirtualDeviceList
+	for _, device := range devices {
+		if disk, ok := device.(*types.VirtualDisk); ok {
+			if diskBacking, ok := disk.Backing.(*types.VirtualDiskFlatVer2BackingInfo); ok {
+				if virtualDiskFiles[diskBacking.FileName] {
+					devicesToDestroy = append(devicesToDestroy, &types.VirtualDevice{
+						Key: device.GetVirtualDevice().Key,
+					})
+				}
+			}
+		}
+	}
+	
+	if err := vm.RemoveDevice(ctx, true, devicesToDestroy...); err != nil {
+		return err
 	}
 
 	task, err = vm.Destroy(ctx)

@@ -7,7 +7,6 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/vmware/govmomi/find"
 	"github.com/vmware/govmomi/object"
-	"github.com/vmware/govmomi/vim25"
 	"github.com/vmware/govmomi/vim25/mo"
 	"github.com/vmware/govmomi/vim25/types"
 	"golang.org/x/net/context"
@@ -59,9 +58,10 @@ func resourceVirtualDiskCreate(resourceData *schema.ResourceData, meta interface
 		return err
 	}
 
-	client := meta.(*vim25.Client)
+	providerMeta := meta.(providerMeta)
+	client := providerMeta.client
 	finder := find.NewFinder(client, false)
-	ctx := context.TODO()
+	ctx := providerMeta.context
 
 	datacenter, err := findDatacenter(ctx, finder, resourceData)
 	if err != nil {
@@ -118,9 +118,10 @@ func resourceVirtualDiskRead(_ *schema.ResourceData, _ interface{}) error {
 }
 
 func resourceVirtualDiskDelete(resourceData *schema.ResourceData, meta interface{}) error {
-	client := meta.(*vim25.Client)
+	providerMeta := meta.(providerMeta)
+	client := providerMeta.client
 	finder := find.NewFinder(client, false)
-	ctx := context.TODO()
+	ctx := providerMeta.context
 
 	datacenter, err := findDatacenter(ctx, finder, resourceData)
 	if err != nil {
@@ -213,9 +214,14 @@ func getDiskPath(resourceData *schema.ResourceData, datastore *object.Datastore)
 		return "", errors.New("Virtual disk path is not specified")
 	}
 
-	if !strings.HasSuffix(diskPath, ".vmdk") {
-		diskPath = fmt.Sprintf("%s.vmdk", diskPath)
-	}
+	diskPath = ensureVmdkSuffix(diskPath)
 
 	return datastore.Path(diskPath), nil
+}
+
+func ensureVmdkSuffix(diskPath string) string {
+	if strings.HasSuffix(diskPath, ".vmdk") {
+		return diskPath
+	}
+	return fmt.Sprintf("%s.vmdk", diskPath)
 }
