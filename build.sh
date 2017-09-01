@@ -1,7 +1,9 @@
-#!/bin/sh -eux
+#!/bin/sh
 
-rm -rf bin/
-rm -rf vendor/
+set -e
+
+rm -f bin/*
+rm -rf vendor/*
 
 glide install -v
 

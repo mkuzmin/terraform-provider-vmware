@@ -1,9 +1,6 @@
-version: '2'
-services:
-  build:
-    build:
-      context: docker/
-    volumes:
-      - .:/go/src/github.com/mkuzmin/terraform-provider-vmware/
-    working_dir: /go/src/github.com/mkuzmin/terraform-provider-vmware/
-    command: ./build.sh
+build:
+  image: jetbrainsinfra/golang:1.9.0
+  volumes:
+    - .:/go/src/github.com/mkuzmin/terraform-provider-vmware/
+  working_dir: /go/src/github.com/mkuzmin/terraform-provider-vmware/
+  command: ./build.sh
