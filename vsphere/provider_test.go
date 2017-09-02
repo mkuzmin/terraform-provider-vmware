@@ -38,4 +38,7 @@ func testAccPreCheck(t *testing.T) {
 	if v := os.Getenv("VSPHERE_PASSWORD"); v == "" {
 		t.Fatal("VSPHERE_PASSWORD must be set for acceptance tests")
 	}
+	if v := os.Getenv("VSPHERE_INSECURE"); v == "" {
+		t.Fatal("VSPHERE_INSECURE must be set for acceptance tests")
+	}
 }
