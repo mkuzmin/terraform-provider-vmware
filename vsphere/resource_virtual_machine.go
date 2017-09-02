@@ -383,6 +383,8 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
 		}
 
 		updateIPAddresses(d, vm, ctx)
+	} else {
+		d.Set("ip_addresses", []string{})
 	}
 
 	return nil
