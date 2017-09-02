@@ -37,7 +37,7 @@ func resourceVirtualDisk() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
-			"sizeMb": {
+			"size": {
 				Type:     schema.TypeInt,
 				Required: true,
 				ForceNew: true,
