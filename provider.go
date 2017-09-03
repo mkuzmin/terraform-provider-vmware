@@ -5,11 +5,14 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/vmware/govmomi/vim25"
+	"github.com/vmware/govmomi/find"
+	"github.com/vmware/govmomi/object"
 )
 
 type providerMeta struct {
 	context context.Context
 	client  *vim25.Client
+	folders *object.DatacenterFolders
 }
 
 func Provider() terraform.ResourceProvider {
@@ -39,6 +42,10 @@ func Provider() terraform.ResourceProvider {
 				Default:     false,
 				Description: "Do not check vCenter SSL certificate",
 			},
+			"datacenter": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
@@ -61,11 +68,31 @@ func providerConfigure(p *schema.Provider) schema.ConfigureFunc {
 
 		ctx := p.StopContext()
 		client, err := config.Client(ctx)
+		finder := find.NewFinder(client, false)
+
+		datacenter := d.Get("datacenter").(string)
+		var dc *object.Datacenter
+		if datacenter == "" {
+			dc, err = finder.DefaultDatacenter(ctx)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			dc, err = finder.Datacenter(ctx, datacenter)
+			if err != nil {
+				return nil, err
+			}
+		}
+		folders, err := dc.Folders(ctx)
+		if err != nil {
+			return nil, err
+		}
 
 		return providerMeta{
 			client:  client,
 			context: ctx,
-		}, err
+			folders: folders,
+		}, nil
 
 	}
 }

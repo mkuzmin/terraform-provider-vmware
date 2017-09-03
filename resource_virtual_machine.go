@@ -113,6 +113,7 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
 	client := providerMeta.client
 	ctx := providerMeta.context
 	finder := find.NewFinder(client, false)
+	folders := providerMeta.folders
 
 	dc_name := d.Get("datacenter").(string)
 	if dc_name == "" {
@@ -131,7 +132,7 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
 	}
 
 	image_name := d.Get("image").(string)
-	image_ref, err := object.NewSearchIndex(client).FindByInventoryPath(ctx, fmt.Sprintf("%s/vm/%s", dc_name, image_name))
+	image_ref, err := object.NewSearchIndex(client).FindByInventoryPath(ctx, fmt.Sprintf("%s/%s", folders.VmFolder, image_name))
 	if err != nil {
 		return fmt.Errorf("Error reading vm: %s", err)
 	}
@@ -149,7 +150,7 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
 	var folder_ref object.Reference
 	var folder *object.Folder
 	if d.Get("folder").(string) != "" {
-		folder_ref, err = object.NewSearchIndex(client).FindByInventoryPath(ctx, fmt.Sprintf("%v/vm/%v", dc_name, d.Get("folder").(string)))
+		folder_ref, err = object.NewSearchIndex(client).FindByInventoryPath(ctx, fmt.Sprintf("%v/%v", folders.VmFolder, d.Get("folder").(string)))
 		if err != nil {
 			return fmt.Errorf("Error reading folder: %s", err)
 		}
