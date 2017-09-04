@@ -1,12 +1,12 @@
 provider "vmware" {
-  vcenter_server = "vcenter.vsphere5.test"
+  vcenter_server = "vcenter.vsphere55.test"
   user = "root"
   password = "jetbrains"
   insecure_connection = true
 }
 resource "vmware_virtual_machine" "vm" {
   name =  "vm-1"
-  image = "template"
-  host = "esxi-1.vsphere5.test"
+  image = "alpine"
+  host = "esxi-1.vsphere55.test"
   power_on = false
 }
