@@ -1,5 +1,5 @@
-hash: 8e0f331955c2c247ecd61c015d263b7acf1d9fb6fd65838b4491f6b838f5254c
-updated: 2017-09-01T21:29:43.592710819Z
+hash: 9a3f56bc602da6c2f4f7f15cd4fc3d143b612f7d0fa2a0715963f27a80a2c981
+updated: 2017-09-04T15:01:31.969306735+03:00
 imports:
 - name: github.com/apparentlymart/go-cidr
   version: 2bd8b58cf4275aeb086ade613de226773e29e853
@@ -117,6 +117,10 @@ imports:
   version: bd40a432e4c76585ef6b72d3fd96fb9b6dc7b68d
 - name: github.com/mattn/go-isatty
   version: fc9e8d8ef48496124e79ae0df75490096eccf6fe
+- name: github.com/maxmanuylov/utils
+  version: ffe3052bf1fc806357e6ed5041e829bcd9f3e5c0
+  subpackages:
+  - intellij-hcl/terraform/provider-schema-generator
 - name: github.com/mitchellh/cli
   version: 0ce7cd515f64496ee660ab19f6bbf373945d3af0
 - name: github.com/mitchellh/copystructure
