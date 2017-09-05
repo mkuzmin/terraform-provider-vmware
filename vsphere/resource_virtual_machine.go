@@ -77,7 +77,7 @@ func resourceVirtualMachine() *schema.Resource {
 				Type:     schema.TypeList,
 				Optional: true,
 				ForceNew: true,
-				Elem: resourceVirtualMachineDisk(),
+				Elem:     resourceVirtualMachineDisk(),
 			},
 			"domain": {
 				Type:     schema.TypeString,
@@ -88,13 +88,6 @@ func resourceVirtualMachine() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
-			},
-			"ip_addresses": {
-				Type:     schema.TypeList,
-				Computed: true,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
-				},
 			},
 			"subnet_mask": {
 				Type:     schema.TypeString,
@@ -265,7 +258,7 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
 				VirtualDevice: types.VirtualDevice{
 					Key: devices.NewKey(),
 					Backing: &types.VirtualDiskFlatVer2BackingInfo{
-						DiskMode:        string(types.VirtualDiskModeIndependent_persistent),
+						DiskMode: string(types.VirtualDiskModeIndependent_persistent),
 						VirtualDeviceFileBackingInfo: types.VirtualDeviceFileBackingInfo{
 							FileName:  datastore.Path(ensureVmdkSuffix(disk["path"].(string))),
 							Datastore: &datastoreRef,
@@ -280,10 +273,10 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
 
 			confSpec.DeviceChange = append(confSpec.DeviceChange, &types.VirtualDeviceConfigSpec{
 				Operation: types.VirtualDeviceConfigSpecOperationAdd,
-				Device: controllerDevice,
+				Device:    controllerDevice,
 			}, &types.VirtualDeviceConfigSpec{
 				Operation: types.VirtualDeviceConfigSpecOperationAdd,
-				Device: diskDevice,
+				Device:    diskDevice,
 			})
 		}
 	}
@@ -370,21 +363,16 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
 	// workaround for https://github.com/vmware/govmomi/issues/218
 	if d.Get("power_on").(bool) {
 		if ip_address == "" {
-			ip, err := vm.WaitForIP(ctx)
+			ip, err := updateIPAddress(vm, ctx)
 			if err != nil {
-				log.Printf("[ERROR] Cannot read ip address: %s", err)
-			} else {
-				d.Set("ip_address", ip)
-				d.SetConnInfo(map[string]string{
-					"type": "ssh",
-					"host": ip,
-				})
+				return fmt.Errorf("[ERROR] Cannot read ip addresses: %s", err)
 			}
+			d.Set("ip_address", ip)
+			d.SetConnInfo(map[string]string{
+				"type": "ssh",
+				"host": ip,
+			})
 		}
-
-		updateIPAddresses(d, vm, ctx)
-	} else {
-		d.Set("ip_addresses", []string{})
 	}
 
 	return nil
@@ -415,14 +403,11 @@ func resourceVirtualMachineRead(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	if d.Get("power_on").(bool) {
-		ip, err := vm.WaitForIP(ctx)
+		ip, err := updateIPAddress(vm, ctx)
 		if err != nil {
-			log.Printf("[ERROR] Cannot read ip address: %s", err)
-		} else {
-			d.Set("ip_address", ip)
+			return fmt.Errorf("[ERROR] Cannot read ip addresses: %s", err)
 		}
-
-		updateIPAddresses(d, vm, ctx)
+		d.Set("ip_address", ip)
 	}
 
 	return nil
@@ -481,7 +466,7 @@ func resourceVirtualMachineDelete(d *schema.ResourceData, meta interface{}) erro
 			}
 		}
 	}
-	
+
 	if err := vm.RemoveDevice(ctx, true, devicesToDestroy...); err != nil {
 		return err
 	}
@@ -498,14 +483,16 @@ func resourceVirtualMachineDelete(d *schema.ResourceData, meta interface{}) erro
 	return nil
 }
 
-func updateIPAddresses(resourceData *schema.ResourceData, vm *object.VirtualMachine, ctx context.Context) {
-	if ipMap, err := vm.WaitForNetIP(ctx, false); err != nil {
-		log.Printf("[ERROR] Cannot read ip addresses: %s", err)
-	} else {
-		ips := make([]string, 0)
-		for _, nicIps := range ipMap {
-			ips = append(ips, nicIps...)
-		}
-		resourceData.Set("ip_addresses", ips)
+func updateIPAddress(vm *object.VirtualMachine, ctx context.Context) (string, error) {
+	ipMap, err := vm.WaitForNetIP(ctx, true)
+	if err != nil {
+		return "", err
 	}
+	if len(ipMap) > 0 {
+		for _, ip := range ipMap {
+			return ip[0], nil
+		}
+	}
+
+	return "", nil
 }
