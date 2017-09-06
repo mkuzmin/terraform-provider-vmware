@@ -9,13 +9,13 @@ import (
 	"github.com/vmware/govmomi/vim25/types"
 )
 
-func TestAccVirtualMachine_minimal(t *testing.T) {
+func TestAccVirtualMachine_basic(t *testing.T) {
 	var vm_id string
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{{
-			Config: testAccVirtualMachine_minimal,
+			Config: testAccVirtualMachine_basic,
 			Check:  testAccCheckVirtualMachineState(&vm_id),
 		}},
 	},
@@ -39,7 +39,7 @@ func testAccCheckVirtualMachineState(vm_id *string) resource.TestCheckFunc {
 	}
 }
 
-const testAccVirtualMachine_minimal = `
+const testAccVirtualMachine_basic = `
 resource "vmware_virtual_machine" "vm" {
   name =  "vm-1"
   image = "empty"
