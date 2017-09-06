@@ -1,5 +1,5 @@
-hash: b8a1e866fc3e110dc3c5cf5fce2f2f64bb3413223b1f2cd7a0689029a568a002
-updated: 2017-09-04T17:52:42.490013664Z
+hash: 02d4ffb46722c45ae6b7105960278457b4979c8af18088b02fa0214e6c6e59cb
+updated: 2017-09-07T01:50:29.167226018+03:00
 imports:
 - name: github.com/apparentlymart/go-cidr
   version: 2bd8b58cf4275aeb086ade613de226773e29e853
@@ -113,6 +113,10 @@ imports:
   - terraform
 - name: github.com/hashicorp/yamux
   version: d1caa6c97c9fc1cc9e83bbe34d0603f9ff0ce8bd
+- name: github.com/jetbrains-infra/packer-builder-vsphere
+  version: 04d1820eb3cae9ad8363ea68977b2e629f977db9
+  subpackages:
+  - driver
 - name: github.com/jmespath/go-jmespath
   version: bd40a432e4c76585ef6b72d3fd96fb9b6dc7b68d
 - name: github.com/mattn/go-isatty

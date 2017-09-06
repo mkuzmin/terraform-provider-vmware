@@ -6,3 +6,4 @@ import:
   version: v0.15.0
 - package: github.com/maxmanuylov/utils
   version: v2.2
+- package: github.com/jetbrains-infra/packer-builder-vsphere
