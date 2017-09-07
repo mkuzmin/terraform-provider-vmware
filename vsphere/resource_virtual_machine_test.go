@@ -10,19 +10,19 @@ import (
 )
 
 func TestAccVirtualMachine_basic(t *testing.T) {
-	var vm_id string
+	var vm driver.VirtualMachine
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{{
 			Config: testAccVirtualMachine_basic,
-			Check:  testAccCheckVirtualMachineState(&vm_id),
+			Check:  testAccCheckVirtualMachineState(&vm),
 		}},
 	},
 	)
 }
 
-func testAccCheckVirtualMachineState(vm_id *string) resource.TestCheckFunc {
+func testAccCheckVirtualMachineState(vm *driver.VirtualMachine) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources["vmware_virtual_machine.vm"]
 		if !ok {
@@ -33,7 +33,21 @@ func testAccCheckVirtualMachineState(vm_id *string) resource.TestCheckFunc {
 		if p.ID == "" {
 			return fmt.Errorf("No ID is set")
 		}
-		*vm_id = p.ID
+
+		d, err := driver.NewDriver(
+			&driver.ConnectConfig{
+				VCenterServer:      "vcenter.vsphere55.test",
+				Username:           "root",
+				Password:           "jetbrains",
+				InsecureConnection: true,
+			},
+		)
+		if err != nil {
+			return fmt.Errorf("Cannot connect: %s", err)
+		}
+
+		v := d.NewVM(&types.ManagedObjectReference{Type: "VirtualMachine", Value: p.ID})
+		*vm = *v
 
 		return nil
 	}
@@ -48,43 +62,24 @@ resource "vmware_virtual_machine" "vm" {
 `
 
 func TestAccVirtualMachine_linkedClone(t *testing.T) {
-	var vm_id string
+	var vm driver.VirtualMachine
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{{
 			Config: testAccVirtualMachine_linkedClone,
-			Check:  testAccCheckLinkedClone(&vm_id),
+			Check: resource.ComposeAggregateTestCheckFunc(
+				testAccCheckVirtualMachineState(&vm),
+				testAccCheckLinkedClone(&vm),
+			),
+
 		}},
 	},
 	)
 }
 
-func testAccCheckLinkedClone(vm_id *string) resource.TestCheckFunc {
+func testAccCheckLinkedClone(vm *driver.VirtualMachine) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		rs, ok := s.RootModule().Resources["vmware_virtual_machine.vm"]
-		if !ok {
-			return fmt.Errorf("Not found: %s", "vmware_virtual_machine.vm")
-		}
-
-		p := rs.Primary
-		if p.ID == "" {
-			return fmt.Errorf("No ID is set")
-		}
-		*vm_id = p.ID
-
-		d, err := driver.NewDriver(
-			&driver.ConnectConfig{
-				VCenterServer: "vcenter.vsphere55.test",
-				Username: "root",
-				Password: "jetbrains",
-				InsecureConnection: true,
-			},
-		)
-		if err != nil {
-			return fmt.Errorf("Cannot connect: %s", err)
-		}
-		vm := d.NewVM(&types.ManagedObjectReference{Type: "VirtualMachine", Value: *vm_id})
 		vmInfo, err := vm.Info("layoutEx.disk")
 		if err != nil {
 			return fmt.Errorf("Cannot read VM properties: %v", err)
@@ -104,5 +99,6 @@ resource "vmware_virtual_machine" "vm" {
   image = "basic"
   host = "esxi-1.vsphere55.test"
   linked_clone = true
+  power_on = false
 }
 `
