@@ -11,19 +11,20 @@ import (
 )
 
 func TestAccVirtualMachine_basic(t *testing.T) {
+	var d driver.Driver
 	var vm driver.VirtualMachine
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{{
 			Config: testAccVirtualMachine_basic,
-			Check:  testAccCheckVirtualMachineState(&vm),
+			Check:  testAccCheckVirtualMachineState(&d, &vm),
 		}},
 	},
 	)
 }
 
-func testAccCheckVirtualMachineState(vm *driver.VirtualMachine) resource.TestCheckFunc {
+func testAccCheckVirtualMachineState(driver *driver.Driver, vm *driver.VirtualMachine) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources["vmware_virtual_machine.test"]
 		if !ok {
@@ -35,17 +36,11 @@ func testAccCheckVirtualMachineState(vm *driver.VirtualMachine) resource.TestChe
 			return fmt.Errorf("No ID is set")
 		}
 
-		d, err := driver.NewDriver(
-			&driver.ConnectConfig{
-				VCenterServer:      os.Getenv("VSPHERE_SERVER"),
-				Username:           os.Getenv("VSPHERE_USER"),
-				Password:           os.Getenv("VSPHERE_PASSWORD"),
-				InsecureConnection: os.Getenv("VSPHERE_INSECURE") == "true",
-			},
-		)
+		d, err := newDriver()
 		if err != nil {
 			return fmt.Errorf("Cannot connect: %s", err)
 		}
+		*driver = *d
 
 		v := d.NewVM(&types.ManagedObjectReference{Type: "VirtualMachine", Value: p.ID})
 		*vm = *v
@@ -63,6 +58,7 @@ resource "vmware_virtual_machine" "test" {
 `
 
 func TestAccVirtualMachine_IP(t *testing.T) {
+	var d driver.Driver
 	var vm driver.VirtualMachine
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
@@ -70,7 +66,7 @@ func TestAccVirtualMachine_IP(t *testing.T) {
 		Steps: []resource.TestStep{{
 			Config: testAccVirtualMachine_IP,
 			Check: resource.ComposeAggregateTestCheckFunc(
-				testAccCheckVirtualMachineState(&vm),
+				testAccCheckVirtualMachineState(&d, &vm),
 				testAccCheckIP(&vm),
 			),
 		}},
@@ -85,16 +81,9 @@ func testAccCheckIP(vm *driver.VirtualMachine) resource.TestCheckFunc {
 			return fmt.Errorf("Cannot read VM properties: %v", err)
 		}
 
-		name := "vmware_virtual_machine.test"
-		key := "ip_address"
-		is, err := primaryInstanceState(s, name)
-		if err != nil {
-			return err
-		}
-
-		v, ok := is.Attributes[key];
+		v, ok := getAttribute(s, "ip_address")
 		if !ok {
-			return fmt.Errorf("%s: Attribute '%s' not found", name, key)
+			return fmt.Errorf("Attribute 'ip_address' not found")
 		}
 
 		if vmInfo.Guest.IpAddress != v {
@@ -115,6 +104,7 @@ resource "vmware_virtual_machine" "test" {
 `
 
 func TestAccVirtualMachine_linkedClone(t *testing.T) {
+	var d driver.Driver
 	var vm driver.VirtualMachine
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
@@ -122,7 +112,7 @@ func TestAccVirtualMachine_linkedClone(t *testing.T) {
 		Steps: []resource.TestStep{{
 			Config: testAccVirtualMachine_linkedClone,
 			Check: resource.ComposeAggregateTestCheckFunc(
-				testAccCheckVirtualMachineState(&vm),
+				testAccCheckVirtualMachineState(&d, &vm),
 				testAccCheckLinkedClone(&vm),
 			),
 		}},
@@ -154,6 +144,59 @@ resource "vmware_virtual_machine" "test" {
   power_on = false
 }
 `
+func TestAccVirtualMachine_pool(t *testing.T) {
+	var d driver.Driver
+	var vm driver.VirtualMachine
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{{
+			Config: testAccVirtualMachine_pool,
+			Check: resource.ComposeAggregateTestCheckFunc(
+				testAccCheckVirtualMachineState(&d, &vm),
+				testAccCheckPool(&d, &vm),
+			),
+		}},
+	},
+	)
+}
+
+func testAccCheckPool(d *driver.Driver, vm *driver.VirtualMachine) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		vmInfo, err := vm.Info("resourcePool")
+		if err != nil {
+			fmt.Errorf("Cannot read VM properties: %v", err)
+		}
+
+		p := d.NewResourcePool(vmInfo.ResourcePool)
+		path, err := p.Path()
+		if err != nil {
+			fmt.Errorf("Cannot read resource pool name: %v", err)
+		}
+
+		pool, ok := getAttribute(s, "resource_pool")
+		if !ok {
+			fmt.Errorf("Cannot read 'resource_pool' attribute")
+		}
+
+		if path != pool {
+			fmt.Errorf("Wrong folder. expected: %v, got: %v", pool, path)
+		}
+
+		return nil
+	}
+}
+
+const testAccVirtualMachine_pool = `
+resource "vmware_virtual_machine" "test" {
+  name =  "vm-1"
+  image = "basic"
+  host = "esxi-1.vsphere55.test"
+  resource_pool = "pool1/pool2"
+  linked_clone = true
+  power_on = false
+}
+`
 
 func primaryInstanceState(s *terraform.State, name string) (*terraform.InstanceState, error) {
 	ms := s.RootModule()
@@ -168,4 +211,26 @@ func primaryInstanceState(s *terraform.State, name string) (*terraform.InstanceS
 	}
 
 	return is, nil
+}
+
+func newDriver() (*driver.Driver, error) {
+	d, err := driver.NewDriver(
+		&driver.ConnectConfig{
+			VCenterServer:      os.Getenv("VSPHERE_SERVER"),
+			Username:           os.Getenv("VSPHERE_USER"),
+			Password:           os.Getenv("VSPHERE_PASSWORD"),
+			InsecureConnection: os.Getenv("VSPHERE_INSECURE") == "true",
+		},
+	)
+	return d, err
+}
+
+func getAttribute(s *terraform.State, attr string) (string, bool) {
+	is, err := primaryInstanceState(s, "vmware_virtual_machine.test")
+	if err != nil {
+		return "", false
+	}
+
+	v, ok := is.Attributes[attr]
+	return v, ok
 }
