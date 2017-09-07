@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/jetbrains-infra/packer-builder-vsphere/driver"
 	"github.com/vmware/govmomi/vim25/types"
+	"os"
 )
 
 func TestAccVirtualMachine_basic(t *testing.T) {
@@ -36,10 +37,10 @@ func testAccCheckVirtualMachineState(vm *driver.VirtualMachine) resource.TestChe
 
 		d, err := driver.NewDriver(
 			&driver.ConnectConfig{
-				VCenterServer:      "vcenter.vsphere55.test",
-				Username:           "root",
-				Password:           "jetbrains",
-				InsecureConnection: true,
+				VCenterServer:      os.Getenv("VSPHERE_SERVER"),
+				Username:           os.Getenv("VSPHERE_USER"),
+				Password:           os.Getenv("VSPHERE_PASSWORD"),
+				InsecureConnection: os.Getenv("VSPHERE_INSECURE") == "true",
 			},
 		)
 		if err != nil {
