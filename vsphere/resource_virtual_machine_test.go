@@ -252,6 +252,56 @@ resource "vmware_virtual_machine" "test" {
 }
 `
 
+func TestAccVirtualMachine_hardware(t *testing.T) {
+	var d driver.Driver
+	var vm driver.VirtualMachine
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{{
+			Config: testAccVirtualMachine_hardware,
+			Check: resource.ComposeAggregateTestCheckFunc(
+				testAccCheckVirtualMachineState(&d, &vm),
+				testAccCheckHardware(&d, &vm),
+			),
+		}},
+	},
+	)
+}
+
+func testAccCheckHardware(d *driver.Driver, vm *driver.VirtualMachine) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		vmInfo, err := vm.Info("config.hardware")
+		if err != nil {
+			return fmt.Errorf("Cannot read VM properties: %v", err)
+		}
+
+		if vmInfo.Config.Hardware.NumCPU != 2 {
+			return fmt.Errorf("wrong number of CPU sockets")
+		}
+
+		if vmInfo.Config.Hardware.MemoryMB != 2048 {
+			return fmt.Errorf("wrong RAM size")
+		}
+
+		return nil
+	}
+}
+
+const testAccVirtualMachine_hardware = `
+resource "vmware_virtual_machine" "test" {
+  name =  "vm-1"
+  image = "basic"
+  host = "esxi-1.vsphere55.test"
+
+  cpus = 2
+  memory = 2048
+
+  linked_clone = true
+  power_on = false
+}
+`
+
 func primaryInstanceState(s *terraform.State, name string) (*terraform.InstanceState, error) {
 	ms := s.RootModule()
 	rs, ok := ms.Resources[name]
