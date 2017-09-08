@@ -198,6 +198,60 @@ resource "vmware_virtual_machine" "test" {
 }
 `
 
+func TestAccVirtualMachine_folder(t *testing.T) {
+	var d driver.Driver
+	var vm driver.VirtualMachine
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{{
+			Config: testAccVirtualMachine_folder,
+			Check: resource.ComposeAggregateTestCheckFunc(
+				testAccCheckVirtualMachineState(&d, &vm),
+				testAccCheckFolder(&d, &vm),
+			),
+		}},
+	},
+	)
+}
+
+func testAccCheckFolder(d *driver.Driver, vm *driver.VirtualMachine) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		vmInfo, err := vm.Info("parent")
+		if err != nil {
+			fmt.Errorf("Cannot read VM properties: %v", err)
+		}
+
+		f := d.NewFolder(vmInfo.Parent)
+		path, err := f.Path()
+		if err != nil {
+			fmt.Errorf("Cannot read folder name: %v", err)
+		}
+
+		folder, ok := getAttribute(s, "folder")
+		if !ok {
+			fmt.Errorf("Cannot read 'folder' attribute")
+		}
+
+		if path != folder {
+			fmt.Errorf("Wrong folder. expected: %v, got: %v", folder, path)
+		}
+
+		return nil
+	}
+}
+
+const testAccVirtualMachine_folder = `
+resource "vmware_virtual_machine" "test" {
+  name =  "vm-1"
+  image = "basic"
+  host = "esxi-1.vsphere55.test"
+  folder = "folder1/folder2"
+  linked_clone = true
+  power_on = false
+}
+`
+
 func primaryInstanceState(s *terraform.State, name string) (*terraform.InstanceState, error) {
 	ms := s.RootModule()
 	rs, ok := ms.Resources[name]
