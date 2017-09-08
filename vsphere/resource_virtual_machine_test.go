@@ -165,22 +165,22 @@ func testAccCheckPool(d *driver.Driver, vm *driver.VirtualMachine) resource.Test
 	return func(s *terraform.State) error {
 		vmInfo, err := vm.Info("resourcePool")
 		if err != nil {
-			fmt.Errorf("Cannot read VM properties: %v", err)
+			return fmt.Errorf("Cannot read VM properties: %v", err)
 		}
 
 		p := d.NewResourcePool(vmInfo.ResourcePool)
 		path, err := p.Path()
 		if err != nil {
-			fmt.Errorf("Cannot read resource pool name: %v", err)
+			return fmt.Errorf("Cannot read resource pool name: %v", err)
 		}
 
 		pool, ok := getAttribute(s, "resource_pool")
 		if !ok {
-			fmt.Errorf("Cannot read 'resource_pool' attribute")
+			return fmt.Errorf("Cannot read 'resource_pool' attribute")
 		}
 
 		if path != pool {
-			fmt.Errorf("Wrong folder. expected: %v, got: %v", pool, path)
+			return fmt.Errorf("Wrong folder. expected: %v, got: %v", pool, path)
 		}
 
 		return nil
@@ -219,22 +219,22 @@ func testAccCheckFolder(d *driver.Driver, vm *driver.VirtualMachine) resource.Te
 	return func(s *terraform.State) error {
 		vmInfo, err := vm.Info("parent")
 		if err != nil {
-			fmt.Errorf("Cannot read VM properties: %v", err)
+			return fmt.Errorf("Cannot read VM properties: %v", err)
 		}
 
 		f := d.NewFolder(vmInfo.Parent)
 		path, err := f.Path()
 		if err != nil {
-			fmt.Errorf("Cannot read folder name: %v", err)
+			return fmt.Errorf("Cannot read folder name: %v", err)
 		}
 
 		folder, ok := getAttribute(s, "folder")
 		if !ok {
-			fmt.Errorf("Cannot read 'folder' attribute")
+			return fmt.Errorf("Cannot read 'folder' attribute")
 		}
 
 		if path != folder {
-			fmt.Errorf("Wrong folder. expected: %v, got: %v", folder, path)
+			return fmt.Errorf("Wrong folder. expected: %v, got: %v", folder, path)
 		}
 
 		return nil
