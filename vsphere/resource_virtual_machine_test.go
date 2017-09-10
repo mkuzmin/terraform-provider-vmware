@@ -198,6 +198,60 @@ resource "vmware_virtual_machine" "test" {
 }
 `
 
+func TestAccVirtualMachine_datastore(t *testing.T) {
+	var d driver.Driver
+	var vm driver.VirtualMachine
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{{
+			Config: testAccVirtualMachine_datastore,
+			Check: resource.ComposeAggregateTestCheckFunc(
+				testAccCheckVirtualMachineState(&d, &vm),
+				testAccCheckDatastore(&d, &vm),
+			),
+		}},
+	},
+	)
+}
+
+func testAccCheckDatastore(d *driver.Driver, vm *driver.VirtualMachine) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		vmInfo, err := vm.Info("datastore")
+		if err != nil {
+			return fmt.Errorf("Cannot read VM properties: %v", err)
+		}
+
+		n := len(vmInfo.Datastore)
+		if n != 1 {
+			return fmt.Errorf("VM should have 1 datastore, got %v", n)
+		}
+
+		ds := d.NewDatastore(&vmInfo.Datastore[0])
+		info, err := ds.Info("name")
+		if err != nil {
+			return fmt.Errorf("Cannot read datastore properties: %v", err)
+		}
+
+		name := "datastore4-2"
+		if info.Name != name {
+			return fmt.Errorf("Wrong datastore. expected: %v, got: %v", name, info.Name)
+		}
+
+		return nil
+	}
+}
+
+const testAccVirtualMachine_datastore = `
+resource "vmware_virtual_machine" "test" {
+  name =  "vm-1"
+  image = "empty"
+  host = "esxi-4.vsphere55.test"
+  datastore = "datastore4-2"
+  power_on = false
+}
+`
+
 func TestAccVirtualMachine_folder(t *testing.T) {
 	var d driver.Driver
 	var vm driver.VirtualMachine
