@@ -38,9 +38,10 @@ func resourceVirtualDisk() *schema.Resource {
 				ForceNew: true,
 			},
 			"size": {
-				Type:     schema.TypeInt,
-				Required: true,
-				ForceNew: true,
+				Type:        schema.TypeInt,
+				Required:    true,
+				ForceNew:    true,
+				Description: "Disk size in megabytes",
 			},
 			"thick": {
 				Type:     schema.TypeBool,
@@ -80,7 +81,7 @@ func resourceVirtualDiskCreate(resourceData *schema.ResourceData, meta interface
 		return err
 	}
 
-	diskSizeMb := resourceData.Get("sizeMb").(int)
+	diskSizeMb := resourceData.Get("size").(int)
 	if diskSizeMb == 0 {
 		return errors.New("Virtual disk size is not specified")
 	}
