@@ -418,9 +418,6 @@ func resourceVirtualMachineDelete(d *schema.ResourceData, meta interface{}) erro
 	client := providerMeta.client
 	ctx := providerMeta.context
 
-	finder := find.NewFinder(client, false)
-	dc_name := d.Get("datacenter").(string)
-
 	vm_mor := types.ManagedObjectReference{Type: "VirtualMachine", Value: d.Id()}
 	vm := object.NewVirtualMachine(client, vm_mor)
 
@@ -435,20 +432,6 @@ func resourceVirtualMachineDelete(d *schema.ResourceData, meta interface{}) erro
 		}
 	}
 
-	virtualDiskFiles := make(map[string]bool)
-	for _, diskValue := range d.Get("disks").([]interface{}) {
-		if disk, ok := diskValue.(map[string]interface{}); ok {
-			diskDatastoreName := disk["datastore"].(string)
-
-			datastore, err := finder.Datastore(ctx, fmt.Sprintf("/%v/datastore/%v", dc_name, diskDatastoreName))
-			if err != nil {
-				return fmt.Errorf("Failed to find datastore \"%s\": %v", diskDatastoreName, err)
-			}
-
-			virtualDiskFiles[datastore.Path(ensureVmdkSuffix(disk["path"].(string)))] = true
-		}
-	}
-
 	devices, err := vm.Device(ctx)
 	if err != nil {
 		return err
@@ -458,7 +441,9 @@ func resourceVirtualMachineDelete(d *schema.ResourceData, meta interface{}) erro
 	for _, device := range devices {
 		if disk, ok := device.(*types.VirtualDisk); ok {
 			if diskBacking, ok := disk.Backing.(*types.VirtualDiskFlatVer2BackingInfo); ok {
-				if virtualDiskFiles[diskBacking.FileName] {
+				// detach all independent persistent disks,
+				// otherwise all dynamically attached disks are destroyed along with VM losing its data
+				if diskBacking.DiskMode == string(types.VirtualDiskModeIndependent_persistent) {
 					devicesToDestroy = append(devicesToDestroy, &types.VirtualDevice{
 						Key: device.GetVirtualDevice().Key,
 					})
