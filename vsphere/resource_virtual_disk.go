@@ -37,7 +37,7 @@ func resourceVirtualDisk() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
-			"fullPath": {
+			"full_path": {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
