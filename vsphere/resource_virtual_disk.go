@@ -37,6 +37,10 @@ func resourceVirtualDisk() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
+			"fullPath": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 			"size": {
 				Type:        schema.TypeInt,
 				Required:    true,
@@ -109,6 +113,7 @@ func resourceVirtualDiskCreate(resourceData *schema.ResourceData, meta interface
 		return fmt.Errorf("Failed to create virtual disk: %v", err)
 	}
 
+	resourceData.Set("fullPath", diskPath)
 	resourceData.SetId(id)
 
 	return nil
@@ -153,6 +158,7 @@ func resourceVirtualDiskDelete(resourceData *schema.ResourceData, meta interface
 	}
 
 	resourceData.SetId("")
+	resourceData.Set("fullPath", "")
 
 	return nil
 }
