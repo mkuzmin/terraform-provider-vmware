@@ -73,6 +73,11 @@ func resourceVirtualMachine() *schema.Resource {
 				Optional: true,
 				Computed: true,
 			},
+			"reserved_memory": {
+				Type:     schema.TypeInt,
+				Optional: true,
+				Computed: true,
+			},
 			"disks": {
 				Type:     schema.TypeList,
 				Optional: true,
@@ -232,6 +237,11 @@ func resourceVirtualMachineCreate(d *schema.ResourceData, meta interface{}) erro
 	}
 	if d.Get("memory") != nil {
 		confSpec.MemoryMB = int64(d.Get("memory").(int))
+	}
+	if d.Get("reserved_memory") != nil {
+		confSpec.MemoryAllocation = &types.ResourceAllocationInfo{
+			Reservation: int64(d.Get("reserved_memory").(int)),
+		}
 	}
 
 	var devices object.VirtualDeviceList
@@ -395,6 +405,7 @@ func resourceVirtualMachineRead(d *schema.ResourceData, meta interface{}) error 
 	d.Set("name", vm_mo.Summary.Config.Name)
 	d.Set("cpus", vm_mo.Summary.Config.NumCpu)
 	d.Set("memory", vm_mo.Summary.Config.MemorySizeMB)
+	d.Set("reserved_memory", vm_mo.Summary.Config.MemoryReservation)
 
 	if vm_mo.Summary.Runtime.PowerState == "poweredOn" {
 		d.Set("power_on", true)
